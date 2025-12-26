@@ -1,4 +1,4 @@
-package pkg
+package ashcache
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func defaultCfg() *config.Cache {
 }
 
 func TestCache(t *testing.T) {
-	cache := NewAshCache(t.Context(), defaultCfg())
+	cache := New(t.Context(), defaultCfg())
 
 	var (
 		err      error
@@ -58,7 +58,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheKeyRespected(t *testing.T) {
-	cache := NewAshCache(t.Context(), defaultCfg())
+	cache := New(t.Context(), defaultCfg())
 
 	var (
 		err      error
@@ -79,7 +79,7 @@ func TestCacheKeyRespected(t *testing.T) {
 }
 
 func TestCacheErrPropagates(t *testing.T) {
-	cache := NewAshCache(t.Context(), defaultCfg())
+	cache := New(t.Context(), defaultCfg())
 
 	var invokes uint64
 	for i := 0; i < 1000; i++ {

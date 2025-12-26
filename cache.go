@@ -1,4 +1,4 @@
-package pkg
+package ashcache
 
 import (
 	"context"
@@ -24,7 +24,7 @@ type Cache struct {
 	telemeter telemetry.Logger
 }
 
-func NewAshCache(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
+func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	cachedtime.CloseByCtx(ctx)
 	cacher := cache.New(ctx, cfg, logger)
 	eviction := evictor.New(ctx, cfg.Eviction, logger, cacher)
