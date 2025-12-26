@@ -1,7 +1,8 @@
-package ashcache
+package tests
 
 import (
 	"fmt"
+	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/internal/db/config"
 	"github.com/Borislavv/go-ash-cache/internal/db/model"
 	"github.com/stretchr/testify/require"
@@ -37,7 +38,7 @@ func defaultCfg() *config.Cache {
 }
 
 func TestCache(t *testing.T) {
-	cache := New(t.Context(), defaultCfg())
+	cache := ashcache.New(t.Context(), defaultCfg())
 
 	var (
 		err      error
@@ -58,7 +59,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheKeyRespected(t *testing.T) {
-	cache := New(t.Context(), defaultCfg())
+	cache := ashcache.New(t.Context(), defaultCfg())
 
 	var (
 		err      error
@@ -79,7 +80,7 @@ func TestCacheKeyRespected(t *testing.T) {
 }
 
 func TestCacheErrPropagates(t *testing.T) {
-	cache := New(t.Context(), defaultCfg())
+	cache := ashcache.New(t.Context(), defaultCfg())
 
 	var invokes uint64
 	for i := 0; i < 1000; i++ {
