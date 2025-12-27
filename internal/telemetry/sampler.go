@@ -36,9 +36,9 @@ type snapshot struct {
 }
 
 func (s sampler) snapshot() snapshot {
-	aAllowed, aNotAllowed, hardItems, hardBytes := s.cache.Metrics()
-	softScans, softHits, softItems, softBytes := s.evictor.Metrics()
-	affected, errs, scans, hits, misses := s.lifetimer.Metrics()
+	aAllowed, aNotAllowed, hardItems, hardBytes := s.cache.CacheMetrics()
+	softScans, softHits, softItems, softBytes := s.evictor.EvictorMetrics()
+	affected, errs, scans, hits, misses := s.lifetimer.LifetimerMetrics()
 
 	return snapshot{
 		admissionAllowed:    uint64(max(aAllowed, 0)),
