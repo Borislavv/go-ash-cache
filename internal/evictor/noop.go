@@ -11,8 +11,8 @@ func (NoOpEvictor) ForceCall(timeout time.Duration) error {
 	return nil
 }
 
-// Metrics always returns zero values.
-func (NoOpEvictor) Metrics() (scans, hits, evictedItems, evictedBytes int64) {
+// LifetimerMetrics always returns zero values.
+func (NoOpEvictor) EvictorMetrics() (scans, hits, evictedItems, evictedBytes int64) {
 	return 0, 0, 0, 0
 }
 
