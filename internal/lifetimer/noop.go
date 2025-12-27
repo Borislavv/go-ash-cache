@@ -5,7 +5,7 @@ package lifetimer
 type NoOpLifetimer struct{}
 
 // Metrics always returns zero values.
-func (NoOpLifetimer) Metrics() (affected, errors, scans, hits, misses int64) {
+func (NoOpLifetimer) LifetimerMetrics() (affected, errors, scans, hits, misses int64) {
 	return 0, 0, 0, 0, 0
 }
 
