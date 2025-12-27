@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/Borislavv/go-ash-cache/internal/shared/cachedtime"
 	"sync/atomic"
 	"time"
 )
@@ -14,7 +15,7 @@ func (e *Entry) UpdatedAt() int64 {
 }
 
 func (e *Entry) RenewTouchedAt() {
-	atomic.StoreInt64(&e.touchedAt, ctime.UnixNano())
+	atomic.StoreInt64(&e.touchedAt, cachedtime.UnixNano())
 }
 
 func (e *Entry) TouchedAt() int64 {
@@ -22,9 +23,9 @@ func (e *Entry) TouchedAt() int64 {
 }
 
 func (e *Entry) RenewUpdatedAt() {
-	atomic.StoreInt64(&e.updatedAt, ctime.UnixNano())
+	atomic.StoreInt64(&e.updatedAt, cachedtime.UnixNano())
 }
 
 func (e *Entry) UntouchRefreshedAt() {
-	atomic.StoreInt64(&e.updatedAt, ctime.UnixNano()-e.ttl)
+	atomic.StoreInt64(&e.updatedAt, cachedtime.UnixNano()-e.ttl)
 }
