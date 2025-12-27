@@ -113,7 +113,9 @@ func (c *Cache) SoftMemoryLimitOvercome() bool {
 	return c.cfg.Eviction.Enabled() && c.db.Len() > 0 && c.db.Mem() > c.cfg.Eviction.SoftMemoryLimitBytes
 }
 
-func (c *Cache) PeekExpiredTTL() (*model.Entry, bool) { return c.db.PeekExpiredTTL() }
+func (c *Cache) PeekExpiredTTL() (*model.Entry, bool) {
+	return c.db.PeekExpiredTTL()
+}
 
 /**
  * Private API.
