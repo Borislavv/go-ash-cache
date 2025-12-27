@@ -3,9 +3,11 @@ package tests
 import (
 	"fmt"
 	"github.com/Borislavv/go-ash-cache"
-	"github.com/Borislavv/go-ash-cache/internal/db/config"
-	"github.com/Borislavv/go-ash-cache/internal/db/model"
+	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
+	"github.com/Borislavv/go-ash-cache/internal/config"
 	"github.com/stretchr/testify/require"
+	"log/slog"
+	"os"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,23 +24,43 @@ func defaultCfg() *config.Cache {
 			IsRemoveOnTTL: false,
 		},
 		Eviction: &config.EvictionCfg{
+			LRUMode:              config.LRUModeListing,
+			SoftLimitCoefficient: 0.8,
 			SoftMemoryLimitBytes: 1024 * 1024 * 800,
-			HardMemoryLimitBytes: 1024 * 1024 * 950,
 			CallsPerSec:          5,
+			BackoffSpinsPerCall:  1024,
+			IsListing:            true,
 		},
-		DB: &config.DbCfg{
+		DB: config.DBCfg{
+			SizeBytes:              1024 * 1024 * 1024,
 			IsTelemetryLogsEnabled: true,
-			Mode:                   "listing",
-			Size:                   1024 * 1024 * 1024,
-			IsListing:              true,
-			SoftMemoryLimit:        1024 * 1024 * 800,
-			HardMemoryLimit:        1024 * 1024 * 950,
+			TelemetryLogsInterval:  time.Second * 5,
 		},
 	}
 }
 
+func defaultLogger() *slog.Logger {
+	// Level can come from config/env; Info is a good production default.
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		// AddSource: false, // keep off in prod unless you need it
+	}
+
+	h := slog.NewJSONHandler(os.Stdout, opts)
+
+	log := slog.New(h).With(
+		slog.String("service", "ashCache"),
+		slog.String("env", "test"),
+	)
+
+	// Optional: make it the default logger used by slog.Info/Debug/etc.
+	slog.SetDefault(log)
+
+	return log
+}
+
 func TestCache(t *testing.T) {
-	cache := ashcache.New(t.Context(), defaultCfg())
+	cache := ashcache.New(t.Context(), defaultCfg(), defaultLogger())
 
 	var (
 		err      error
@@ -59,7 +81,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheKeyRespected(t *testing.T) {
-	cache := ashcache.New(t.Context(), defaultCfg())
+	cache := ashcache.New(t.Context(), defaultCfg(), defaultLogger())
 
 	var (
 		err      error
@@ -80,7 +102,7 @@ func TestCacheKeyRespected(t *testing.T) {
 }
 
 func TestCacheErrPropagates(t *testing.T) {
-	cache := ashcache.New(t.Context(), defaultCfg())
+	cache := ashcache.New(t.Context(), defaultCfg(), defaultLogger())
 
 	var invokes uint64
 	for i := 0; i < 1000; i++ {
