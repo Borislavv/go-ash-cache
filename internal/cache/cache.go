@@ -75,6 +75,50 @@ func (c *Cache) Del(key string) bool {
 	return true
 }
 
+func (c *Cache) OnTTL(entry *model.Entry) error {
+	if c.cfg.Lifetime.IsRemoveOnTTL {
+		c.remove(entry)
+		return nil
+	} else {
+		return entry.Update()
+	}
+}
+
+func (c *Cache) Len() int64 { return c.db.Len() }
+func (c *Cache) Mem() int64 { return c.db.Mem() }
+func (c *Cache) Clear()     { c.db.Clear() }
+
+func (c *Cache) CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64) {
+	return c.counters.snapshot()
+}
+
+func (c *Cache) Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool) {
+	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), func(key uint64, shard *db.Shard) {
+		shard.Walk(ctx, fn, rw)
+	})
+}
+
+func (c *Cache) WalkShards(ctx context.Context, fn func(key uint64, shard *db.Shard)) {
+	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), fn)
+}
+
+func (c *Cache) SoftEvictUntilWithinLimit(backoff int64) (freed, evicted int64) {
+	if c.cfg.Eviction.Enabled() {
+		freed, evicted = c.db.EvictUntilWithinLimit(c.cfg.Eviction.SoftMemoryLimitBytes, backoff)
+	}
+	return
+}
+
+func (c *Cache) SoftMemoryLimitOvercome() bool {
+	return c.cfg.Eviction.Enabled() && c.db.Len() > 0 && c.db.Mem() > c.cfg.Eviction.SoftMemoryLimitBytes
+}
+
+func (c *Cache) PeekExpiredTTL() (*model.Entry, bool) { return c.db.PeekExpiredTTL() }
+
+/**
+ * Private API.
+ */
+
 func (c *Cache) get(key uint64) (*model.Entry, bool) {
 	if ptr, found := c.db.Get(key); found {
 		return c.touch(ptr), true
@@ -139,54 +183,15 @@ func (c *Cache) update(existing, in *model.Entry) {
 	c.db.Touch(existing.Key().Value())
 }
 
-func (c *Cache) OnTTL(entry *model.Entry) error {
-	if c.cfg.Lifetime.IsRemoveOnTTL {
-		c.remove(entry)
-		return nil
-	} else {
-		return entry.Update()
-	}
-}
-
-func (c *Cache) Len() int64 { return c.db.Len() }
-func (c *Cache) Mem() int64 { return c.db.Mem() }
-func (c *Cache) Clear()     { c.db.Clear() }
-
-func (c *Cache) CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64) {
-	return c.counters.snapshot()
-}
-
-func (c *Cache) Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool) {
-	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), func(key uint64, shard *db.Shard) {
-		shard.Walk(ctx, fn, rw)
-	})
-}
-
-func (c *Cache) WalkShards(ctx context.Context, fn func(key uint64, shard *db.Shard)) {
-	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), fn)
-}
-
-func (c *Cache) SoftEvictUntilWithinLimit(backoff int64) (freed, evicted int64) {
-	if c.cfg.Eviction.Enabled() {
-		freed, evicted = c.db.EvictUntilWithinLimit(c.cfg.Eviction.SoftMemoryLimitBytes, backoff)
-	}
-	return
-}
-
-func (c *Cache) SoftMemoryLimitOvercome() bool {
-	return c.cfg.Eviction.Enabled() && c.db.Len() > 0 && c.db.Mem()-c.cfg.Eviction.SoftMemoryLimitBytes > 0
-}
-
-func (c *Cache) PeekExpiredTTL() (*model.Entry, bool) {
-	return c.db.PeekExpiredTTL()
-}
-
-/**
- * Private API.
- */
-
 func (c *Cache) makeEntry(key *model.Key, callback func(entry model.AshItem) ([]byte, error)) *model.Entry {
-	return model.NewEmptyEntry(key, c.cfg.Lifetime.TTL.Nanoseconds(), callback)
+	return model.NewEmptyEntry(key, c.cfgTTLNanoseconds(), callback)
+}
+
+func (c *Cache) cfgTTLNanoseconds() int64 {
+	if c.cfg.Lifetime.Enabled() {
+		return c.cfg.Lifetime.TTL.Nanoseconds()
+	}
+	return 0
 }
 
 func (c *Cache) remove(entry *model.Entry) (int64, bool) { return c.db.Remove(entry.Key().Value()) }
