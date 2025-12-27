@@ -5,22 +5,21 @@ import (
 	"sync/atomic"
 )
 
-const rLockSpins, rwLockSpins = 8, 16
+const rLockSpins, rwLockSpins, defaultSample = 8, 16, 32
 
 func (m *Map) PeekExpiredTTL() (*model.Entry, bool) {
-	if v, ok := m.NextQueuedWithExpiredTTL(); ok {
+	if v, ok := m.peekExpiredByQueues(); ok {
 		return v, true
 	} else {
-		const defaultSample = 32
-		return m.peekExpired(defaultSample)
+		return m.peekExpiredBySampling(defaultSample)
 	}
 }
 
 // EnqueueExpired tries to put key to its shard refresh queue.
 func (m *Map) EnqueueExpired(key uint64) bool { return m.Shard(key).EnqueueRefresh(key) }
 
-// NextQueuedWithExpiredTTL tries to pop one queued key from up to 'probes' shards.
-func (m *Map) NextQueuedWithExpiredTTL() (*model.Entry, bool) {
+// peekExpiredByQueues tries to pop one queued key from up to 'probes' shards.
+func (m *Map) peekExpiredByQueues() (*model.Entry, bool) {
 	start := int((atomic.AddUint64(&m.iter, 1) - 1) & shardMask)
 	for i := 0; i < NumOfShards; i++ {
 		sh := m.shards[(start+i)&shardMask]
@@ -40,7 +39,7 @@ func (m *Map) NextQueuedWithExpiredTTL() (*model.Entry, bool) {
 	return nil, false
 }
 
-func (m *Map) peekExpired(sample int) (*model.Entry, bool) {
+func (m *Map) peekExpiredBySampling(sample int) (*model.Entry, bool) {
 	var (
 		best    *model.Entry
 		seen    int
