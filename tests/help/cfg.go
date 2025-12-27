@@ -37,11 +37,11 @@ func EvictionCfg() *config.Cache {
 	c := Cfg()
 	c.Eviction = &config.EvictionCfg{
 		LRUMode:              config.LRUModeListing,
-		SoftLimitCoefficient: 0.8,              // Soft eviction will start on 8Mb
-		SoftMemoryLimitBytes: 1024 * 1024 * 10, // 10Mb
+		SoftLimitCoefficient: 0.8,
+		SoftMemoryLimitBytes: 1024 * 1024 * 8,
 		CallsPerSec:          5,
 		BackoffSpinsPerCall:  1024,
 	}
-	c.AdjustConfig()
+	c.Lifetime = nil
 	return c
 }
