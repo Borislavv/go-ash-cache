@@ -27,7 +27,7 @@ func (m *Map) NextQueuedWithExpiredTTL() (*model.Entry, bool) {
 		if k, ok := sh.DequeueExpired(); ok {
 			if v, ok2 := sh.Get(k); ok2 { // under RLock
 				// double-check freshness
-				if v.IsExpired() {
+				if v.IsExpired(m.cfg) {
 					// caller refreshes; the flag will be cleared after success
 					return v, true
 				} else {
@@ -62,7 +62,7 @@ loop:
 				sh.RUnlock()
 				break loop
 			}
-			if entry.IsExpired() {
+			if entry.IsExpired(m.cfg) {
 				hitSeen++
 				if !set {
 					best = entry
