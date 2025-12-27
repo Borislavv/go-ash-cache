@@ -45,3 +45,63 @@ func EvictionCfg() *config.Cache {
 	c.Lifetime = nil
 	return c
 }
+
+func LifetimerRefreshStochasticCfg() *config.Cache {
+	c := Cfg()
+	c.Lifetime = &config.LifetimerCfg{
+		OnTTL:                        config.TTLModeRefresh,
+		TTL:                          5 * time.Second,
+		Rate:                         1_000_000,
+		Beta:                         0.5,
+		StochasticBetaRefreshEnabled: true,
+		Coefficient:                  0.5,
+		IsRemoveOnTTL:                false,
+	}
+	c.Eviction = nil
+	return c
+}
+
+func LifetimerRefreshCfg() *config.Cache {
+	c := Cfg()
+	c.Lifetime = &config.LifetimerCfg{
+		OnTTL:                        config.TTLModeRefresh,
+		TTL:                          5 * time.Second,
+		Rate:                         1_000_000,
+		Beta:                         0.5,
+		StochasticBetaRefreshEnabled: false,
+		Coefficient:                  0.5,
+		IsRemoveOnTTL:                false,
+	}
+	c.Eviction = nil
+	return c
+}
+
+func LifetimerRemoveStochasticCfg() *config.Cache {
+	c := Cfg()
+	c.Lifetime = &config.LifetimerCfg{
+		OnTTL:                        config.TTLModeRemove,
+		TTL:                          6 * time.Second,
+		Rate:                         1_000_000,
+		Beta:                         0.5,
+		StochasticBetaRefreshEnabled: true,
+		Coefficient:                  0.5,
+		IsRemoveOnTTL:                true,
+	}
+	c.Eviction = nil
+	return c
+}
+
+func LifetimerRemoveCfg() *config.Cache {
+	c := Cfg()
+	c.Lifetime = &config.LifetimerCfg{
+		OnTTL:                        config.TTLModeRemove,
+		TTL:                          5 * time.Second,
+		Rate:                         1_000_000,
+		Beta:                         0.5,
+		StochasticBetaRefreshEnabled: false,
+		Coefficient:                  0.5,
+		IsRemoveOnTTL:                true,
+	}
+	c.Eviction = nil
+	return c
+}
