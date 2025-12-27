@@ -13,22 +13,13 @@ import (
 const shardsSample, keysSample, spinsBackoff = 2, 8, 32
 
 type Cacher interface {
-	// Cache API
-	Get(key uint64) (*model.Entry, bool)
-	Set(new *model.Entry) (persisted bool)
-	Remove(entry *model.Entry) (int64, bool)
+	Get(key string, callback func(item model.AshItem) ([]byte, error)) (data []byte, err error)
+	CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64)
+	Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool)
+	Del(key string) (ok bool)
 	Clear()
 	Len() int64
 	Mem() int64
-	// Evictor API
-	SoftMemoryLimitOvercome() bool
-	SoftEvictUntilWithinLimit(backoff int64) (freed, evicted int64)
-	// Lifetimer API
-	PeekExpiredTTL() (*model.Entry, bool)
-	// Public Additionl Access API
-	MakeEntry(key *model.Key, callback func(entry model.AshItem) ([]byte, error)) *model.Entry
-	WalkShards(ctx context.Context, fn func(key uint64, shard *db.Shard))
-	Metrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64)
 }
 
 // Cache respects given ctx.
@@ -50,14 +41,48 @@ func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	}
 }
 
-func (c *Cache) Get(key uint64) (*model.Entry, bool) {
+func (c *Cache) Get(key string, callback func(item model.AshItem) ([]byte, error)) (data []byte, err error) {
+	k := model.NewKey(key)
+	if entry, ok := c.get(k.Value()); ok {
+		if entry.Key().IsTheSame(k) {
+			return entry.PayloadBytes(), nil
+		}
+		// hash collision
+	}
+
+	entry := c.makeEntry(k, callback)
+	resp, respErr := callback(entry)
+	if respErr != nil {
+		return nil, respErr
+	}
+	entry.SetPayload(resp)
+	c.set(entry)
+
+	return resp, nil
+}
+
+func (c *Cache) Del(key string) bool {
+	k := model.NewKey(key)
+
+	if entry, ok := c.get(k.Value()); ok {
+		if entry.Key().IsTheSame(k) {
+			_, ok = c.remove(entry)
+			return ok
+		}
+		// hash collision
+	}
+
+	return true
+}
+
+func (c *Cache) get(key uint64) (*model.Entry, bool) {
 	if ptr, found := c.db.Get(key); found {
 		return c.touch(ptr), true
 	}
 	return nil, false
 }
 
-func (c *Cache) Set(new *model.Entry) (persisted bool) {
+func (c *Cache) set(new *model.Entry) (persisted bool) {
 	key := new.Key().Value()
 	c.admitter.Record(key)
 
@@ -116,27 +141,22 @@ func (c *Cache) update(existing, in *model.Entry) {
 
 func (c *Cache) OnTTL(entry *model.Entry) error {
 	if c.cfg.Lifetime.IsRemoveOnTTL {
-		c.Remove(entry)
+		c.remove(entry)
 		return nil
 	} else {
 		return entry.Update()
 	}
 }
 
-func (c *Cache) Len() int64                              { return c.db.Len() }
-func (c *Cache) Mem() int64                              { return c.db.Mem() }
-func (c *Cache) Clear()                                  { c.db.Clear() }
-func (c *Cache) Remove(entry *model.Entry) (int64, bool) { return c.db.Remove(entry.Key().Value()) }
+func (c *Cache) Len() int64 { return c.db.Len() }
+func (c *Cache) Mem() int64 { return c.db.Mem() }
+func (c *Cache) Clear()     { c.db.Clear() }
 
-func (c *Cache) Metrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64) {
+func (c *Cache) CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64) {
 	return c.counters.snapshot()
 }
 
-func (c *Cache) MakeEntry(key *model.Key, callback func(entry model.AshItem) ([]byte, error)) *model.Entry {
-	return model.NewEmptyEntry(key, c.cfg.Lifetime.TTL.Nanoseconds(), callback)
-}
-
-func (c *Cache) Around(ctx context.Context, fn func(item model.AshItem) bool, rw bool) {
+func (c *Cache) Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool) {
 	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), func(key uint64, shard *db.Shard) {
 		shard.Walk(ctx, fn, rw)
 	})
@@ -160,6 +180,16 @@ func (c *Cache) SoftMemoryLimitOvercome() bool {
 func (c *Cache) PeekExpiredTTL() (*model.Entry, bool) {
 	return c.db.PeekExpiredTTL()
 }
+
+/**
+ * Private API.
+ */
+
+func (c *Cache) makeEntry(key *model.Key, callback func(entry model.AshItem) ([]byte, error)) *model.Entry {
+	return model.NewEmptyEntry(key, c.cfg.Lifetime.TTL.Nanoseconds(), callback)
+}
+
+func (c *Cache) remove(entry *model.Entry) (int64, bool) { return c.db.Remove(entry.Key().Value()) }
 
 func (c *Cache) hardEvictUntilWithinLimit() (freed, evicted int64) {
 	if c.cfg.Eviction.Enabled() {
