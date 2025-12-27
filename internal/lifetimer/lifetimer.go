@@ -12,7 +12,7 @@ import (
 )
 
 type Lifetimer interface {
-	Metrics() (affected, errors, scans, hits, misses int64)
+	LifetimerMetrics() (affected, errors, scans, hits, misses int64)
 	Close() error
 }
 
@@ -61,7 +61,7 @@ func New(
 	}).run()
 }
 
-func (w *LifetimeWorker) Metrics() (affected, errors, scans, hits, misses int64) {
+func (w *LifetimeWorker) LifetimerMetrics() (affected, errors, scans, hits, misses int64) {
 	return w.counters.snapshot()
 }
 
