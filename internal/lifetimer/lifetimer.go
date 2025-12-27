@@ -11,6 +11,8 @@ import (
 	"sync"
 )
 
+const removeModeJitterRate = 100_000
+
 type Lifetimer interface {
 	LifetimerMetrics() (affected, errors, scans, hits, misses int64)
 	Close() error
@@ -42,6 +44,8 @@ func New(
 	var jitter *rate.Jitter
 	if cfg.OnTTL == config.TTLModeRefresh {
 		jitter = rate.NewJitter(ctx, cfg.Rate)
+	} else {
+		jitter = rate.NewJitter(ctx, removeModeJitterRate)
 	}
 
 	var invokeCap = cfg.Rate
