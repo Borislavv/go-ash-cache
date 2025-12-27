@@ -45,7 +45,7 @@ func TestEvictorListingEviction(t *testing.T) {
 			memory := cache.Mem()
 			length := cache.Len()
 			if length <= expectedLength && memory <= expectedMemory {
-				require.LessOrEqual(t, length, expectedLength, fmt.Sprintf("cache length - %d, memory - %s (expected length = 80)", length, bytes.FmtMem(uint64(memory))))
+				require.LessOrEqual(t, length, expectedLength, fmt.Sprintf("cache length - %d, memory - %s (expected length = %d)", length, bytes.FmtMem(uint64(memory)), expectedLength))
 				require.LessOrEqual(t, memory, expectedMemory, fmt.Sprintf("cache length - %d, memory - %s (expected memory = %s)", length, bytes.FmtMem(uint64(memory)), bytes.FmtMem(uint64(evictionTestCfg.Eviction.SoftMemoryLimitBytes))))
 				return
 			}
@@ -86,7 +86,7 @@ func TestEvictorSamplingEviction(t *testing.T) {
 			memory := cache.Mem()
 			length := cache.Len()
 			if length <= expectedLength && memory <= expectedMemory {
-				require.LessOrEqual(t, length, expectedLength, fmt.Sprintf("cache length - %d, memory - %s (expected length = 80)", length, bytes.FmtMem(uint64(memory))))
+				require.LessOrEqual(t, length, expectedLength, fmt.Sprintf("cache length - %d, memory - %s (expected length = %d)", length, bytes.FmtMem(uint64(memory)), expectedLength))
 				require.LessOrEqual(t, memory, expectedMemory, fmt.Sprintf("cache length - %d, memory - %s (expected memory = %s)", length, bytes.FmtMem(uint64(memory)), bytes.FmtMem(uint64(evictionTestCfg.Eviction.SoftMemoryLimitBytes))))
 				return
 			}
