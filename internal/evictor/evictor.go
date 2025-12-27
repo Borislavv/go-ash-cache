@@ -15,7 +15,7 @@ var ErrEvictorNotResponded = errors.New("evictor not responded")
 
 type Evictor interface {
 	ForceCall(timeout time.Duration) error
-	Metrics() (scans, hits, evictedItems, evictedBytes int64)
+	EvictorMetrics() (scans, hits, evictedItems, evictedBytes int64)
 	Close() error
 }
 
@@ -64,7 +64,7 @@ func (w *EvictionWorker) ForceCall(timeout time.Duration) error {
 	return nil
 }
 
-func (w *EvictionWorker) Metrics() (scans, hits, evictedItems, evictedBytes int64) {
+func (w *EvictionWorker) EvictorMetrics() (scans, hits, evictedItems, evictedBytes int64) {
 	return w.counters.snapshot()
 }
 
