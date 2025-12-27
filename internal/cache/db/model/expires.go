@@ -25,6 +25,9 @@ func (e *Entry) isExpired() bool {
 	if e == nil {
 		return false
 	}
+	if e.ttl == 0 {
+		return false
+	}
 
 	// Time since the last successful refresh.
 	elapsed := cachedtime.UnixNano() - atomic.LoadInt64(&e.updatedAt)
@@ -35,6 +38,9 @@ func (e *Entry) isExpired() bool {
 // Returns true if the entry is stale and, with a probability proportional to its staleness, should be refreshed now.
 func (e *Entry) isProbablyExpired(beta, coefficient float64) bool {
 	if e == nil {
+		return false
+	}
+	if e.ttl == 0 {
 		return false
 	}
 
