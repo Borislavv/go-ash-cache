@@ -70,7 +70,10 @@ func (l *Logs) loop() {
 	ticker := time.NewTicker(l.interval)
 	defer ticker.Stop()
 
-	softLimit := bytes.FmtMem(uint64(l.cfg.Eviction.SoftMemoryLimitBytes))
+	var softLimit = "INF"
+	if l.cfg.Eviction.Enabled() {
+		softLimit = bytes.FmtMem(uint64(l.cfg.Eviction.SoftMemoryLimitBytes))
+	}
 	hardLimit := bytes.FmtMem(uint64(l.cfg.DB.SizeBytes))
 
 	s := newSampler(l.cache, l.evictor, l.lifetimer)
