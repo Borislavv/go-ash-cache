@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type AshItemCache interface {
+type AshCacheItem interface {
 	AshItem
 	Key() *Key
 	Update() error
