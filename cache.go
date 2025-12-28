@@ -25,7 +25,7 @@ type Cache struct {
 	evictor.Evictor
 	lifetimer.Lifetimer
 	telemetry.Logger
-	cls context.CancelFunc
+	context.CancelFunc
 }
 
 func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
@@ -35,10 +35,10 @@ func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	eviction := evictor.New(ctx, cfg.Eviction, logger, cacher)
 	lifetime := lifetimer.New(ctx, cfg.Lifetime, logger, cacher)
 	telemeter := telemetry.New(ctx, cfg, logger, cacher, eviction, lifetime, cfg.DB.TelemetryLogsInterval)
-	return &Cache{cls: cancel, Cacher: cacher, Evictor: eviction, Lifetimer: lifetime, Logger: telemeter}
+	return &Cache{CancelFunc: cancel, Cacher: cacher, Evictor: eviction, Lifetimer: lifetime, Logger: telemeter}
 }
 
 func (c *Cache) Close() error {
-	c.cls()
+	c.CancelFunc()
 	return nil
 }
