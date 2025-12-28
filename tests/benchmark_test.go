@@ -1,7 +1,8 @@
-package ashcache
+package tests
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
 	"log/slog"
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	benchCache     *Cache
+	benchCache     *ashcache.Cache
 	benchCacheOnce sync.Once
 	benchKeys      []string
 )
@@ -30,7 +31,7 @@ func initBenchCache() {
 			LRUMode:              config.LRUModeListing,
 			SoftLimitCoefficient: 0.8,
 			CallsPerSec:          10,
-			BackoffSpinsPerCall:   2048,
+			BackoffSpinsPerCall:  2048,
 		},
 		AdmissionControl: &config.AdmissionControlCfg{
 			Capacity:            10000,
@@ -42,7 +43,7 @@ func initBenchCache() {
 	}
 	cfg.AdjustConfig()
 
-	benchCache = New(ctx, cfg, logger)
+	benchCache = ashcache.New(ctx, cfg, logger)
 
 	// Pre-populate with test data
 	benchKeys = make([]string, 1000)
@@ -52,7 +53,7 @@ func initBenchCache() {
 	}
 
 	for i := 0; i < 1000; i++ {
-		key := string(rune('a' + (i % 26))) + string(rune('0'+(i/26)))
+		key := string(rune('a'+(i%26))) + string(rune('0'+(i/26)))
 		benchKeys[i] = key
 		_, _ = benchCache.Get(key, func(item model.AshItem) ([]byte, error) {
 			return testData, nil
@@ -60,7 +61,7 @@ func initBenchCache() {
 	}
 }
 
-func getBenchCache() *Cache {
+func getBenchCache() *ashcache.Cache {
 	benchCacheOnce.Do(initBenchCache)
 	return benchCache
 }
