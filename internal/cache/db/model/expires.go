@@ -25,13 +25,14 @@ func (e *Entry) isExpired() bool {
 	if e == nil {
 		return false
 	}
-	if e.ttl == 0 {
+	ttl := atomic.LoadInt64(&e.ttl)
+	if ttl == 0 {
 		return false
 	}
 
 	// Time since the last successful refresh.
 	elapsed := cachedtime.UnixNano() - atomic.LoadInt64(&e.updatedAt)
-	return elapsed > e.ttl
+	return elapsed > ttl
 }
 
 // isProbablyExpired implements probabilistic refresh logic ("beta" algorithm) and used while background refresh.
@@ -40,11 +41,12 @@ func (e *Entry) isProbablyExpired(beta, coefficient float64) bool {
 	if e == nil {
 		return false
 	}
+	i64TTL := atomic.LoadInt64(&e.ttl)
 	if e.ttl == 0 {
 		return false
 	}
 
-	var ttl = float64(e.ttl)
+	var ttl = float64(i64TTL)
 	// Time since the last successful refresh.
 	elapsed := cachedtime.UnixNano() - atomic.LoadInt64(&e.updatedAt)
 	// Hard floor: do nothing until elapsed >= coefficient * ttl.
