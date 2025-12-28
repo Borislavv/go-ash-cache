@@ -1,6 +1,8 @@
 package bloom
 
 import (
+	"github.com/Borislavv/go-ash-cache/internal/cache/db"
+	"github.com/Borislavv/go-ash-cache/internal/config"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -10,12 +12,12 @@ import (
 
 // Compact, high-signal config for unit tests (not for production).
 // Goal: increase per-shard event density so frequency differences become visible fast.
-var cfgTest = &config.Admission{
-	Capacity:            100_000,             // enough to "warm up" and get stable frequencies
-	Shards:              512,                 // fewer shards -> more traffic per shard
-	MinTableLenPerShard: sharded.NumOfShards, // not tiny, not huge — good for unit testing
-	DoorBitsPerCounter:  16,                  // sufficient for short tests
-	SampleMultiplier:    12,                  // aging not too frequent
+var cfgTest = &config.AdmissionControlCfg{
+	Capacity:            100_000,        // enough to "warm up" and get stable frequencies
+	Shards:              512,            // fewer shards -> more traffic per shard
+	MinTableLenPerShard: db.NumOfShards, // not tiny, not huge — good for unit testing
+	DoorBitsPerCounter:  16,             // sufficient for short tests
+	SampleMultiplier:    12,             // aging not too frequent
 }
 
 // key returns a deterministic key for index i (1-based to avoid zero).
