@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/bloom"
@@ -13,9 +14,9 @@ import (
 const shardsSample, keysSample, spinsBackoff = 2, 8, 32
 
 type Cacher interface {
-	Get(key string, callback func(item model.AshItem) ([]byte, error)) (data []byte, err error)
+	Get(key string, callback func(item ashcache.Item) ([]byte, error)) (data []byte, err error)
 	CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64)
-	Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool)
+	Around(ctx context.Context, fn func(item ashcache.CacheItem) bool, rw bool)
 	Del(key string) (ok bool)
 	Clear()
 	Len() int64
@@ -41,7 +42,7 @@ func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	}
 }
 
-func (c *Cache) Get(key string, callback func(item model.AshItem) ([]byte, error)) (data []byte, err error) {
+func (c *Cache) Get(key string, callback func(item ashcache.Item) ([]byte, error)) (data []byte, err error) {
 	k := model.NewKey(key)
 	if entry, ok := c.get(k.Value()); ok {
 		if entry.Key().IsTheSame(k) {
@@ -92,7 +93,7 @@ func (c *Cache) CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvict
 	return c.counters.snapshot()
 }
 
-func (c *Cache) Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool) {
+func (c *Cache) Around(ctx context.Context, fn func(item ashcache.CacheItem) bool, rw bool) {
 	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), func(key uint64, shard *db.Shard) {
 		shard.Walk(ctx, fn, rw)
 	})
@@ -185,7 +186,7 @@ func (c *Cache) update(existing, in *model.Entry) {
 	c.db.Touch(existing.Key().Value())
 }
 
-func (c *Cache) makeEntry(key *model.Key, callback func(entry model.AshItem) ([]byte, error)) *model.Entry {
+func (c *Cache) makeEntry(key *model.Key, callback func(entry ashcache.Item) ([]byte, error)) *model.Entry {
 	return model.NewEmptyEntry(key, c.cfgTTLNanoseconds(), callback)
 }
 

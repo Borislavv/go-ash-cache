@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/config"
-	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
 	"log/slog"
 	"math/rand"
 	"sync"
@@ -55,7 +54,7 @@ func initBenchCache() {
 	for i := 0; i < 1000; i++ {
 		key := string(rune('a'+(i%26))) + string(rune('0'+(i/26)))
 		benchKeys[i] = key
-		_, _ = benchCache.Get(key, func(item model.AshItem) ([]byte, error) {
+		_, _ = benchCache.Get(key, func(item ashcache.Item) ([]byte, error) {
 			return testData, nil
 		})
 	}
@@ -76,7 +75,7 @@ func BenchmarkGetHit(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+		data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 			return testData, nil
 		})
 		if err != nil {
@@ -98,7 +97,7 @@ func BenchmarkGetMiss(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		key := string(rune('z')) + string(rune('0'+(i%10)))
-		data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+		data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 			return testData, nil
 		})
 		if err != nil {
@@ -120,7 +119,7 @@ func BenchmarkSet(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		key := string(rune('z')) + string(rune('1'+(i%10)))
-		_, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+		_, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 			return testData, nil
 		})
 		if err != nil {
@@ -139,7 +138,7 @@ func BenchmarkGetHitParallel(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+			data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 				return testData, nil
 			})
 			if err != nil {
@@ -165,7 +164,7 @@ func BenchmarkGetMissParallel(b *testing.B) {
 			idx := int(counter) % 10000
 			counter++
 			key := string(rune('z')) + string(rune('a'+(idx%26))) + string(rune('0'+(idx/26)))
-			data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+			data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 				return testData, nil
 			})
 			if err != nil {
@@ -197,7 +196,7 @@ func BenchmarkGetMixed(b *testing.B) {
 			key = string(rune('z')) + string(rune('0'+(i%10)))
 		}
 
-		data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+		data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 			return testData, nil
 		})
 		if err != nil {
@@ -231,7 +230,7 @@ func BenchmarkGetMixedParallel(b *testing.B) {
 				key = string(rune('z')) + string(rune('a'+(idx%26))) + string(rune('0'+(idx/26)))
 			}
 
-			data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+			data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 				return testData, nil
 			})
 			if err != nil {
@@ -254,7 +253,7 @@ func BenchmarkDel(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		key := string(rune('d')) + string(rune('0'+(i%10)))
 		keys[i] = key
-		_, _ = cache.Get(key, func(item model.AshItem) ([]byte, error) {
+		_, _ = cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 			return testData, nil
 		})
 	}
@@ -285,7 +284,7 @@ func BenchmarkConcurrentThroughput(b *testing.B) {
 			defer wg.Done()
 			for i := 0; i < opsPerGoroutine; i++ {
 				key := benchKeys[(goroutineID*opsPerGoroutine+i)%len(benchKeys)]
-				data, err := cache.Get(key, func(item model.AshItem) ([]byte, error) {
+				data, err := cache.Get(key, func(item ashcache.Item) ([]byte, error) {
 					return testData, nil
 				})
 				if err != nil {

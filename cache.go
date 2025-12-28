@@ -12,6 +12,13 @@ import (
 	"log/slog"
 )
 
+type TTLMode int32
+
+const (
+	Refresh TTLMode = iota
+	Remove
+)
+
 type AshCache interface {
 	cache.Cacher
 	evictor.Evictor

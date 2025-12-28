@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func TestCache_Get_Miss_CallsCallback(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	var callbackCalled bool
-	data, err := c.Get("test", func(item model.AshItem) ([]byte, error) {
+	data, err := c.Get("test", func(item ashcache.Item) ([]byte, error) {
 		callbackCalled = true
 		return []byte("data"), nil
 	})
@@ -47,13 +48,13 @@ func TestCache_Get_Hit_ReturnsCached(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	// First call - miss
-	_, _ = c.Get("test", func(item model.AshItem) ([]byte, error) {
+	_, _ = c.Get("test", func(item ashcache.Item) ([]byte, error) {
 		return []byte("data1"), nil
 	})
 
 	// Second call - hit
 	var callbackCalled bool
-	data, err := c.Get("test", func(item model.AshItem) ([]byte, error) {
+	data, err := c.Get("test", func(item ashcache.Item) ([]byte, error) {
 		callbackCalled = true
 		return []byte("data2"), nil
 	})
@@ -76,7 +77,7 @@ func TestCache_Get_ErrorPropagates(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	testErr := errors.New("callback error")
-	data, err := c.Get("test", func(item model.AshItem) ([]byte, error) {
+	data, err := c.Get("test", func(item ashcache.Item) ([]byte, error) {
 		return nil, testErr
 	})
 
@@ -99,7 +100,7 @@ func TestCache_Del_RemovesEntry(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	// Add entry
-	_, _ = c.Get("test", func(item model.AshItem) ([]byte, error) {
+	_, _ = c.Get("test", func(item ashcache.Item) ([]byte, error) {
 		return []byte("data"), nil
 	})
 
@@ -142,7 +143,7 @@ func TestCache_Clear_RemovesAllEntries(t *testing.T) {
 
 	// Add multiple entries
 	for i := 0; i < 10; i++ {
-		_, _ = c.Get("test"+string(rune(i)), func(item model.AshItem) ([]byte, error) {
+		_, _ = c.Get("test"+string(rune(i)), func(item ashcache.Item) ([]byte, error) {
 			return []byte("data"), nil
 		})
 	}
@@ -296,7 +297,7 @@ func TestCache_OnTTL_RefreshMode(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	var updateCalled bool
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), func(item model.AshItem) ([]byte, error) {
+	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), func(item ashcache.Item) ([]byte, error) {
 		updateCalled = true
 		return []byte("refreshed"), nil
 	})
@@ -374,7 +375,7 @@ func TestCache_SoftEvictUntilWithinLimit(t *testing.T) {
 	// Verify function doesn't panic and returns valid values
 	require.GreaterOrEqual(t, evicted, int64(0))
 	require.GreaterOrEqual(t, freed, int64(0))
-	
+
 	// If eviction occurred, verify state
 	if evicted > 0 {
 		require.Less(t, c.Len(), initialLen)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	ashcache "github.com/Borislavv/go-ash-cache"
-	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
 	"github.com/Borislavv/go-ash-cache/internal/shared/bytes"
 	"github.com/Borislavv/go-ash-cache/tests/help"
 	"github.com/stretchr/testify/require"
@@ -20,7 +19,7 @@ func TestEvictorListingEviction(t *testing.T) {
 	// attempt to load 10mb in cache
 	const wightKB = 100 * 1024
 	for i := 0; i < 100; i++ {
-		data, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.AshItem) ([]byte, error) {
+		data, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
 			data := make([]byte, wightKB)
 			return data, nil
 		})
@@ -61,7 +60,7 @@ func TestEvictorSamplingEviction(t *testing.T) {
 	// attempt to load 10mb in cache when threshold is 8mb
 	const wightKB = 100 * 1024
 	for i := 0; i < 100; i++ {
-		data, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.AshItem) ([]byte, error) {
+		data, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
 			data := make([]byte, wightKB)
 			return data, nil
 		})

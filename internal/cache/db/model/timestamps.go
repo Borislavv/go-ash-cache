@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/internal/shared/cachedtime"
 	"sync/atomic"
 	"time"
@@ -8,6 +9,10 @@ import (
 
 func (e *Entry) SetTTL(ttl time.Duration) {
 	atomic.StoreInt64(&e.ttl, ttl.Nanoseconds())
+}
+
+func (e *Entry) SetTTLMode(mode ashcache.TTLMode) {
+	atomic.StoreInt32(&e.isRemoveOnTTL, int32(mode))
 }
 
 func (e *Entry) UpdatedAt() int64 {

@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"github.com/Borislavv/go-ash-cache"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -11,7 +12,7 @@ func TestEntry_Update(t *testing.T) {
 	var callbackCalled bool
 	testData := []byte("updated data")
 
-	entry := NewEmptyEntry(NewKey("test"), 0, func(item AshItem) ([]byte, error) {
+	entry := NewEmptyEntry(NewKey("test"), 0, func(item ashcache.Item) ([]byte, error) {
 		callbackCalled = true
 		return testData, nil
 	})
@@ -26,7 +27,7 @@ func TestEntry_Update(t *testing.T) {
 func TestEntry_Update_Error(t *testing.T) {
 	testErr := errors.New("callback error")
 
-	entry := NewEmptyEntry(NewKey("test"), 0, func(item AshItem) ([]byte, error) {
+	entry := NewEmptyEntry(NewKey("test"), 0, func(item ashcache.Item) ([]byte, error) {
 		return nil, testErr
 	})
 
