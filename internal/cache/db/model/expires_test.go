@@ -63,7 +63,7 @@ func TestEntry_IsExpired_Expired(t *testing.T) {
 	// Set updatedAt to past using UntouchRefreshedAt
 	// This sets updatedAt = now - ttl, so elapsed = ttl (not > ttl)
 	// To make it expired, we need elapsed > ttl, so wait a bit after UntouchRefreshedAt
-	entry.UntouchRefreshedAt() // Sets updatedAt to now - ttl
+	entry.UntouchRefreshedAt()       // Sets updatedAt to now - ttl
 	time.Sleep(2 * time.Millisecond) // Wait so elapsed = now - (now - ttl) = ttl + 2ms > ttl
 
 	// With real time, this should now be expired
@@ -77,21 +77,21 @@ func TestEntry_QueueExpired(t *testing.T) {
 	entry := NewEmptyEntry(NewKey("test"), 0, nil)
 
 	// First call should succeed
-	require.True(t, entry.QueueExpired())
+	require.True(t, entry.EnqueueExpired())
 
 	// Second call should fail (already queued)
-	require.False(t, entry.QueueExpired())
+	require.False(t, entry.EnqueueExpired())
 }
 
 // TestEntry_DequeueExpired clears queue flag.
 func TestEntry_DequeueExpired(t *testing.T) {
 	entry := NewEmptyEntry(NewKey("test"), 0, nil)
 
-	entry.QueueExpired()
+	entry.EnqueueExpired()
 	entry.DequeueExpired()
 
 	// Should be able to queue again
-	require.True(t, entry.QueueExpired())
+	require.True(t, entry.EnqueueExpired())
 }
 
 // TestEntry_IsProbablyExpired_Stochastic verifies stochastic expiration logic.
@@ -102,8 +102,8 @@ func TestEntry_IsProbablyExpired_Stochastic(t *testing.T) {
 		},
 		Lifetime: &config.LifetimerCfg{
 			OnTTL:                        config.TTLModeRefresh,
-			TTL:                           time.Hour,
-			Beta:                          0.5,
+			TTL:                          time.Hour,
+			Beta:                         0.5,
 			StochasticBetaRefreshEnabled: true,
 			Coefficient:                  0.1, // Start checking at 10% of TTL
 		},

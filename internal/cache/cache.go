@@ -169,7 +169,7 @@ func (c *Cache) touch(existing *model.Entry) *model.Entry {
 	// move to front in LRU list
 	c.db.Touch(existing.Key().Value())
 	// check the entry exists and expired, if so then push it to the per-shard refresh queue
-	if existing.IsExpired(c.cfg) && existing.QueueExpired() {
+	if existing.IsExpired(c.cfg) && existing.EnqueueExpired() {
 		if !c.db.EnqueueExpired(existing.Key().Value()) {
 			existing.DequeueExpired()
 		}

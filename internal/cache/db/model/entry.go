@@ -24,12 +24,12 @@ type AshItem interface {
 
 type Entry struct {
 	key               *Key                    // 64 bit xxh + hi + lo for manage collisions
-	touchedAt         int64                   // atomic: unix nano (used in LRU algo.)
-	updatedAt         int64                   // atomic: unix nano (used for refresh entry)
 	ttl               int64                   // atomic: unix nano (used for refresh/remove entry)
 	isQueuedOnRefresh int64                   // atomic: int as bool; whether an item is queued on update
 	payload           *atomic.Pointer[[]byte] // atomic: payload ([]byte)
 	callback          func(entry AshItem) ([]byte, error)
+	touchedAt         int64 // atomic: unix nano (used in LRU algo.)
+	updatedAt         int64 // atomic: unix nano (used for refresh entry)
 }
 
 func NewEmptyEntry(key *Key, cfgTTL int64, callback func(entry AshItem) ([]byte, error)) *Entry {

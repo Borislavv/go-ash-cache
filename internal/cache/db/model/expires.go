@@ -62,7 +62,7 @@ func (e *Entry) isProbablyExpired(beta, coefficient float64) bool {
 	return random.Float64() < probability
 }
 
-func (e *Entry) QueueExpired() bool {
+func (e *Entry) EnqueueExpired() bool {
 	return atomic.CompareAndSwapInt64(&e.isQueuedOnRefresh, 0, 1)
 }
 
