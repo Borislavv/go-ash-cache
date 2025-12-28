@@ -2,6 +2,7 @@ package cachedtime
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache/internal/config"
 	"sync/atomic"
 	"time"
 )
@@ -14,19 +15,19 @@ var (
 	doneCh  = make(chan struct{})
 )
 
-func init() {
+func RunIfEnabled(ctx context.Context, cfg *config.Cache) {
+	if !cfg.DB.CacheTimeEnabled {
+		return
+	}
+	cancelDeferredByCtx(ctx)
+
 	nowUnix.Store(time.Now().UnixNano())
 	ticker := time.NewTicker(cacheTimeEach)
 	go func() {
 		defer ticker.Stop()
 		for {
 			select {
-			case tt, ok := <-ticker.C:
-				if !ok {
-					// never, but for robust behavior if the go Ticker will be changed in further versions
-					// don't cache nil value of time.Time never
-					return
-				}
+			case tt := <-ticker.C:
 				nowUnix.Store(tt.UnixNano())
 			case <-doneCh:
 				return
@@ -53,7 +54,7 @@ func Since(t time.Time) time.Duration {
 	return Now().Sub(t)
 }
 
-func CloseByCtx(ctx context.Context) {
+func cancelDeferredByCtx(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 		if closed.CompareAndSwap(false, true) {
