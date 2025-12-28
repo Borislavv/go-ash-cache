@@ -12,8 +12,9 @@
 ### 🚀 Performance & Scalability
 
 - **Sharded Architecture**: 1024 independent shards minimize lock contention, enabling linear scalability across CPU cores
-- **Zero-Allocation Hot Paths**: Critical operations (Get/Set) avoid heap allocations for maximum throughput
+- **Optimized Hot Paths**: Critical operations (Get/Set) minimize allocations (~2-3 allocs per operation, ~56-58 bytes)
 - **Lock-Free Operations**: Atomic counters and CAS-based algorithms reduce synchronization overhead
+- **High Throughput**: 15M+ operations per second on modern hardware
 
 ### 🧠 Intelligent Admission Control
 
@@ -299,14 +300,18 @@ The cache uses 1024 independent shards, each with its own lock. Keys are distrib
 
 ## Benchmarks
 
-AshCache is designed for high-throughput scenarios. Typical performance characteristics:
+AshCache is designed for high-throughput scenarios. Performance measured on Apple M2 Max (12 cores):
 
-- **Get (hit)**: < 100ns (zero allocations)
-- **Get (miss)**: Depends on callback execution time
-- **Set**: < 200ns (zero allocations on hot path)
-- **Concurrent throughput**: Scales linearly with CPU cores
+| Operation | Latency | Throughput | Allocations |
+|-----------|---------|------------|-------------|
+| **Get (hit)** | ~65ns | ~15M ops/sec | 2 allocs (56B) |
+| **Get (miss)** | ~85ns | ~12M ops/sec | 3 allocs (58B) |
+| **Set** | ~85ns | ~12M ops/sec | 3 allocs (58B) |
+| **Get (hit, parallel)** | ~190ns | ~5M ops/sec/core | 2 allocs (56B) |
+| **Get (mixed 80/20, parallel)** | ~60ns | ~17M ops/sec/core | 2 allocs (56B) |
+| **Concurrent throughput** | ~45ns | ~20M ops/sec | 2 allocs (56B) |
 
-*Note: Actual performance depends on workload, cache size, and system configuration.*
+*Benchmarks run with 1KB payload size. Actual performance depends on workload, cache size, payload size, and system configuration. Run `go test -bench=. ./...` to benchmark on your system.*
 
 ## Contributing
 
@@ -333,6 +338,9 @@ go test -race ./...
 
 # Run benchmarks
 go test -bench=. ./...
+
+# Run specific benchmark with detailed output
+go test -bench=BenchmarkGetHit -benchmem -benchtime=3s
 ```
 
 ## License
