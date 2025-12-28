@@ -27,6 +27,7 @@ func Cfg() *config.Cache {
 			SizeBytes:              1024 * 1024 * 1024,
 			IsTelemetryLogsEnabled: true,
 			TelemetryLogsInterval:  time.Second * 5,
+			CacheTimeEnabled:       true,
 		},
 	}
 	c.AdjustConfig()
