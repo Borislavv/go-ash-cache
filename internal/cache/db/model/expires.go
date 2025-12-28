@@ -42,7 +42,7 @@ func (e *Entry) isProbablyExpired(beta, coefficient float64) bool {
 		return false
 	}
 	i64TTL := atomic.LoadInt64(&e.ttl)
-	if e.ttl == 0 {
+	if i64TTL == 0 {
 		return false
 	}
 
