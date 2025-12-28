@@ -2,13 +2,12 @@ package tests
 
 import (
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/bloom"
+	"github.com/Borislavv/go-ash-cache/tests/help"
 	"testing"
-
-	"github.com/Borislavv/go-ash-cache/internal/config"
 )
 
 func TestTinyLFU_Record_DoorkeeperGating(t *testing.T) {
-	a := newTestAdmitter()
+	a := bloom.NewAdmissionControl(help.TinyLFUCfg())
 
 	// Pick hash mapping to any shard, stable.
 	const h uint64 = 0x100 // ...&3==0 for Shards=4
@@ -32,7 +31,7 @@ func TestTinyLFU_Record_DoorkeeperGating(t *testing.T) {
 }
 
 func TestTinyLFU_Allow_RejectsUnseenCandidate(t *testing.T) {
-	a := newTestAdmitter()
+	a := bloom.NewAdmissionControl(help.TinyLFUCfg())
 
 	// Ensure same shard (so we don't mix in cross-shard quirks).
 	// With Shards=4 => mask=3. Both &3 == 0.
@@ -49,7 +48,7 @@ func TestTinyLFU_Allow_RejectsUnseenCandidate(t *testing.T) {
 }
 
 func TestTinyLFU_Allow_PrefersHotCandidate_SameShard(t *testing.T) {
-	a := newTestAdmitter()
+	a := bloom.NewAdmissionControl(help.TinyLFUCfg())
 
 	// Same shard (shard 0).
 	const candidate uint64 = 0x100
@@ -82,7 +81,7 @@ func TestTinyLFU_Allow_PrefersHotCandidate_SameShard(t *testing.T) {
 }
 
 func TestTinyLFU_Reset_HalvesSketchCounters(t *testing.T) {
-	a := newTestAdmitter()
+	a := bloom.NewAdmissionControl(help.TinyLFUCfg())
 
 	// Same shard, stable.
 	const h uint64 = 0x100
@@ -115,12 +114,8 @@ func TestTinyLFU_Reset_HalvesSketchCounters(t *testing.T) {
 // This test exposes a correctness issue in the current Allow() implementation:
 // it estimates victim frequency using the candidate shard sketch.
 // That can lead to admitting a cold candidate over a hot victim when they map to different shards.
-//
-// Keep it as a "red test" until Allow() is fixed to estimate victim in its own shard.
-func TestTinyLFU_Allow_CrossShardVictim_Bug(t *testing.T) {
-	t.Skip("BUG: Allow() estimates victim in candidate shard; enable after fixing Allow() to use victim shard")
-
-	a := newTestAdmitter()
+func TestTinyLFU_Allow_CrossShardVictim(t *testing.T) {
+	a := bloom.NewAdmissionControl(help.TinyLFUCfg())
 
 	// Different shards (Shards=4 => mask=3)
 	// candidate shard 0, victim shard 1
@@ -140,22 +135,6 @@ func TestTinyLFU_Allow_CrossShardVictim_Bug(t *testing.T) {
 			a.Estimate(candidate), a.Estimate(victim),
 		)
 	}
-}
-
-// ---- helpers ----
-
-func newTestAdmitter() bloom.AdmissionControl {
-	// Deterministic, compact config.
-	cfg := &config.AdmissionControlCfg{
-		Capacity:            128,
-		Shards:              4,
-		MinTableLenPerShard: 64,
-		SampleMultiplier:    3,
-		DoorBitsPerCounter:  2,
-	}
-
-	// Prefer calling the concrete constructor to avoid cfg.Enabled() semantics.
-	return bloom.NewAdmissionControl(cfg)
 }
 
 func recordN(a bloom.AdmissionControl, h uint64, n int) {

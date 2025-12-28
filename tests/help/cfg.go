@@ -106,16 +106,12 @@ func LifetimerRemoveCfg() *config.Cache {
 	return c
 }
 
-func TinyLFUCfg() *config.Cache {
-	c := Cfg()
-	c.AdmissionControl = &config.AdmissionControlCfg{
-		Capacity:            128, // маленькая, легко мыслить в тестах
-		Shards:              4,   // явно делится
-		MinTableLenPerShard: 64,  // специально больше, чем Capacity/Shards (=32), чтобы сработал min
-		SampleMultiplier:    3,   // отличимо от 1
-		DoorBitsPerCounter:  2,   // маленький doorkeeper, заметный FP
+func TinyLFUCfg() *config.AdmissionControlCfg {
+	return &config.AdmissionControlCfg{
+		Capacity:            128,
+		Shards:              4,
+		MinTableLenPerShard: 64,
+		SampleMultiplier:    3,
+		DoorBitsPerCounter:  2,
 	}
-	c.Lifetime = nil
-	c.Eviction = nil
-	return c
 }
