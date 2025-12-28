@@ -6,50 +6,59 @@ import (
 	"time"
 )
 
+const cacheTimeEach = 10 * time.Millisecond
+
 var (
-	cacheTimeEach = time.Millisecond * 10
-	nowUnix       atomic.Int64
-	doneChPtr     = atomic.Pointer[chan struct{}]{}
+	nowUnix atomic.Int64
+	closed  atomic.Bool
+	doneCh  = make(chan struct{})
 )
 
 func init() {
 	nowUnix.Store(time.Now().UnixNano())
-	t := time.NewTicker(cacheTimeEach)
-	doneCh := make(chan struct{})
-	doneChPtr.Store(&doneCh)
+	ticker := time.NewTicker(cacheTimeEach)
 	go func() {
+		defer ticker.Stop()
 		for {
 			select {
-			case tt := <-t.C:
+			case tt, ok := <-ticker.C:
+				if !ok {
+					// never, but for robust behavior if the go Ticker will be changed in further versions
+					// don't cache nil value of time.Time never
+					return
+				}
 				nowUnix.Store(tt.UnixNano())
-			case <-*doneChPtr.Load():
-				t.Stop()
+			case <-doneCh:
 				return
 			}
 		}
 	}()
 }
+
 func Now() time.Time {
-	if doneChPtr.Load() == nil {
+	if closed.Load() {
 		return time.Now()
 	}
 	return time.Unix(0, nowUnix.Load())
 }
+
 func UnixNano() int64 {
-	if doneChPtr.Load() == nil {
+	if closed.Load() {
 		return time.Now().UnixNano()
 	}
 	return nowUnix.Load()
 }
+
 func Since(t time.Time) time.Duration {
 	return Now().Sub(t)
 }
+
 func CloseByCtx(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
-		if doneChPtr.Load() != nil {
-			close(*doneChPtr.Load())
-			doneChPtr.Store(nil)
+		if closed.CompareAndSwap(false, true) {
+			// we are only one how closing the channel
+			close(doneCh)
 		}
 	}()
 }
