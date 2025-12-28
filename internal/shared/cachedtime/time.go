@@ -17,6 +17,7 @@ var (
 
 func RunIfEnabled(ctx context.Context, cfg *config.Cache) {
 	if !cfg.DB.CacheTimeEnabled {
+		closed.Store(true)
 		return
 	}
 	cancelDeferredByCtx(ctx)
