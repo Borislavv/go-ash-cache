@@ -1,6 +1,6 @@
 # AshCache — high-performance in-memory cache for Go
 
-[![Go Version](https://img.shields.io/static/v1?label=Go&message=1.23%2B&logo=go&color=00ADD8)](https://go.dev/dl/) [![Coverage](https://img.shields.io/codecov/c/github/Borislavv/go-ash-cache?label=coverage)](https://codecov.io/gh/Borislavv/go-ash-cache) [![License](https://img.shields.io/badge/License-Apache--2.0-green.svg)](./LICENSE)
+[![Go Version](https://img.shields.io/static/v1?label=Go&message=1.25%2B&logo=go&color=00ADD8)](https://go.dev/dl/) [![Coverage](https://img.shields.io/codecov/c/github/Borislavv/go-ash-cache?label=coverage)](https://codecov.io/gh/Borislavv/go-ash-cache) [![License](https://img.shields.io/badge/License-Apache--2.0-green.svg)](./LICENSE)
 
 
 AshCache is a production-oriented **in-memory cache library for Go** designed for high throughput and predictable latency.
