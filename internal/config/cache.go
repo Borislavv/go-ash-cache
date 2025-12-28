@@ -11,11 +11,6 @@ type Cache struct {
 	// If nil, admission control is disabled and items are admitted unconditionally.
 	AdmissionControl *AdmissionControlCfg `yaml:"admission_control"`
 
-	// Persistence configures cache persistence to disk.
-	// When enabled, cache state can be dumped to disk and restored on startup.
-	// If nil, cache persistence is disabled.
-	Persistence *PersistenceCfg `yaml:"persistence"`
-
 	// Compression configures on-the-fly compression of cached values.
 	// If nil, compression is disabled.
 	Compression *CompressionCfg `yaml:"compression"`
