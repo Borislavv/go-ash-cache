@@ -9,19 +9,20 @@ import (
 var (
 	cacheTimeEach = time.Millisecond * 10
 	nowUnix       atomic.Int64
-	doneCh        = make(chan struct{})
+	doneChPtr     = atomic.Pointer[chan struct{}]{}
 )
 
 func init() {
 	nowUnix.Store(time.Now().UnixNano())
 	t := time.NewTicker(cacheTimeEach)
-	doneCh = make(chan struct{})
+	doneCh := make(chan struct{})
+	doneChPtr.Store(&doneCh)
 	go func() {
 		for {
 			select {
 			case tt := <-t.C:
 				nowUnix.Store(tt.UnixNano())
-			case <-doneCh:
+			case <-*doneChPtr.Load():
 				t.Stop()
 				return
 			}
@@ -29,13 +30,13 @@ func init() {
 	}()
 }
 func Now() time.Time {
-	if doneCh == nil {
+	if doneChPtr.Load() == nil {
 		return time.Now()
 	}
 	return time.Unix(0, nowUnix.Load())
 }
 func UnixNano() int64 {
-	if doneCh == nil {
+	if doneChPtr.Load() == nil {
 		return time.Now().UnixNano()
 	}
 	return nowUnix.Load()
@@ -46,9 +47,9 @@ func Since(t time.Time) time.Duration {
 func CloseByCtx(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
-		if doneCh != nil {
-			close(doneCh)
-			doneCh = nil
+		if doneChPtr.Load() != nil {
+			close(*doneChPtr.Load())
+			doneChPtr.Store(nil)
 		}
 	}()
 }
