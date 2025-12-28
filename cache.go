@@ -30,7 +30,7 @@ type Cache struct {
 
 func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	ctx, cancel := context.WithCancel(ctx)
-	cachedtime.CloseByCtx(ctx)
+	cachedtime.RunIfEnabled(ctx, cfg)
 	cacher := cache.New(ctx, cfg, logger)
 	eviction := evictor.New(ctx, cfg.Eviction, logger, cacher)
 	lifetime := lifetimer.New(ctx, cfg.Lifetime, logger, cacher)
