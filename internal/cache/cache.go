@@ -2,10 +2,10 @@ package cache
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/bloom"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
-	"github.com/Borislavv/go-ash-cache/internal/config"
 	"log/slog"
 	"runtime"
 )

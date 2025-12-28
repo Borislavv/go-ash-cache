@@ -8,8 +8,8 @@ package db
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
-	"github.com/Borislavv/go-ash-cache/internal/config"
 	"runtime"
 	"sync"
 	"sync/atomic"

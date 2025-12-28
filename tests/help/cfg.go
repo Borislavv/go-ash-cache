@@ -1,7 +1,7 @@
 package help
 
 import (
-	"github.com/Borislavv/go-ash-cache/internal/config"
+	"github.com/Borislavv/go-ash-cache/config"
 	"time"
 )
 

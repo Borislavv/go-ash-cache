@@ -2,9 +2,9 @@ package lifetimer
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
-	"github.com/Borislavv/go-ash-cache/internal/config"
 	"github.com/Borislavv/go-ash-cache/internal/shared/rate"
 	"log/slog"
 	"runtime"

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/Borislavv/go-ash-cache/internal/config"
+	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/shared/cachedtime"
 	"github.com/Borislavv/go-ash-cache/internal/shared/random"
 	"math"

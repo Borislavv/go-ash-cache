@@ -2,7 +2,7 @@ package cachedtime
 
 import (
 	"context"
-	"github.com/Borislavv/go-ash-cache/internal/config"
+	"github.com/Borislavv/go-ash-cache/config"
 	"sync/atomic"
 	"time"
 )

@@ -3,8 +3,8 @@ package evictor
 import (
 	"context"
 	"errors"
+	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache"
-	"github.com/Borislavv/go-ash-cache/internal/config"
 	"log/slog"
 	"runtime"
 	"sync"

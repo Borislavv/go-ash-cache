@@ -1,6 +1,8 @@
 package bloom
 
-import "github.com/Borislavv/go-ash-cache/internal/config"
+import (
+	"github.com/Borislavv/go-ash-cache/config"
+)
 
 type ShardedAdmitter struct {
 	mask   uint32

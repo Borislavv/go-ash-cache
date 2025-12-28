@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/Borislavv/go-ash-cache/internal/config"
+	"github.com/Borislavv/go-ash-cache/config"
 	"sync/atomic"
 	"time"
 )

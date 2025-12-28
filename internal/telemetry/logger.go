@@ -2,11 +2,11 @@ package telemetry
 
 import (
 	"context"
+	"github.com/Borislavv/go-ash-cache/config"
 	"log/slog"
 	"time"
 
 	"github.com/Borislavv/go-ash-cache/internal/cache"
-	"github.com/Borislavv/go-ash-cache/internal/config"
 	"github.com/Borislavv/go-ash-cache/internal/evictor"
 	"github.com/Borislavv/go-ash-cache/internal/lifetimer"
 	"github.com/Borislavv/go-ash-cache/internal/shared/bytes"
