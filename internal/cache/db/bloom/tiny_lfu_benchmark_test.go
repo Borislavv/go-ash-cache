@@ -1,9 +1,9 @@
 package bloom
 
 import (
-	"github.com/Borislavv/go-ash-cache/internal/db"
-	"github.com/Borislavv/go-ash-cache/internal/db/config"
-	"github.com/Borislavv/go-ash-cache/internal/db/model"
+	"github.com/Borislavv/go-ash-cache/internal/cache/db"
+	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
+	"github.com/Borislavv/go-ash-cache/internal/config"
 	"math/rand"
 	"testing"
 	"time"
