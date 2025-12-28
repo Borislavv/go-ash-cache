@@ -28,6 +28,7 @@ type Cache struct {
 	context.CancelFunc
 }
 
+// New - make a new AshCache instance. Respects context, as well as each component does.
 func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	ctx, cancel := context.WithCancel(ctx)
 	cachedtime.RunIfEnabled(ctx, cfg)
@@ -38,6 +39,7 @@ func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	return &Cache{CancelFunc: cancel, Cacher: cacher, Evictor: eviction, Lifetimer: lifetime, Logger: telemeter}
 }
 
+// Close - force close before the main context is not done yet. Otherwise, it does not necessary.
 func (c *Cache) Close() error {
 	c.CancelFunc()
 	return nil
