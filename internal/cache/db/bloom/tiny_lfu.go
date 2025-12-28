@@ -56,12 +56,28 @@ func (a *ShardedAdmitter) Record(h uint64) {
 // If the candidate is unseen by the doorkeeper we conservatively reject (unless caller
 // uses a small “window” segment to bypass admission).
 func (a *ShardedAdmitter) Allow(candidate, victim uint64) bool {
-	sh := &a.shards[candidate&uint64(a.mask)] // shard by candidate for locality
-	if !sh.door.probablySeen(candidate) {
+	if candidate == victim {
+		// Same entry: no replacement needed, but "allow" is safe.
+		return true
+	}
+
+	mask := uint64(a.mask)
+
+	// Gate on candidate doorkeeper: unseen candidates are rejected early.
+	candSh := &a.shards[candidate&mask]
+	if !candSh.door.probablySeen(candidate) {
 		return false
 	}
-	cf := sh.sketch.estimate(candidate)
-	vf := sh.sketch.estimate(victim)
+
+	// Estimate candidate frequency in candidate shard.
+	cf := candSh.sketch.estimate(candidate)
+
+	// Estimate victim frequency in victim shard (IMPORTANT for correctness).
+	victSh := &a.shards[victim&mask]
+	vf := victSh.sketch.estimate(victim)
+
+	// Strict preference: admit only if candidate is strictly more frequent.
+	// (Keeps eviction stable and avoids churn on ties.)
 	return cf > vf
 }
 
