@@ -3,9 +3,9 @@ package cache
 import (
 	"context"
 	"errors"
-	"github.com/Borislavv/go-ash-cache"
 	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
+	model2 "github.com/Borislavv/go-ash-cache/model"
 	"github.com/stretchr/testify/require"
 	"log/slog"
 	"testing"
@@ -25,7 +25,7 @@ func TestCache_Get_Miss_CallsCallback(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	var callbackCalled bool
-	data, err := c.Get("test", func(item ashcache.Item) ([]byte, error) {
+	data, err := c.Get("test", func(item model2.Item) ([]byte, error) {
 		callbackCalled = true
 		return []byte("data"), nil
 	})
@@ -48,13 +48,13 @@ func TestCache_Get_Hit_ReturnsCached(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	// First call - miss
-	_, _ = c.Get("test", func(item ashcache.Item) ([]byte, error) {
+	_, _ = c.Get("test", func(item model2.Item) ([]byte, error) {
 		return []byte("data1"), nil
 	})
 
 	// Second call - hit
 	var callbackCalled bool
-	data, err := c.Get("test", func(item ashcache.Item) ([]byte, error) {
+	data, err := c.Get("test", func(item model2.Item) ([]byte, error) {
 		callbackCalled = true
 		return []byte("data2"), nil
 	})
@@ -77,7 +77,7 @@ func TestCache_Get_ErrorPropagates(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	testErr := errors.New("callback error")
-	data, err := c.Get("test", func(item ashcache.Item) ([]byte, error) {
+	data, err := c.Get("test", func(item model2.Item) ([]byte, error) {
 		return nil, testErr
 	})
 
@@ -100,7 +100,7 @@ func TestCache_Del_RemovesEntry(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	// Add entry
-	_, _ = c.Get("test", func(item ashcache.Item) ([]byte, error) {
+	_, _ = c.Get("test", func(item model2.Item) ([]byte, error) {
 		return []byte("data"), nil
 	})
 
@@ -143,7 +143,7 @@ func TestCache_Clear_RemovesAllEntries(t *testing.T) {
 
 	// Add multiple entries
 	for i := 0; i < 10; i++ {
-		_, _ = c.Get("test"+string(rune(i)), func(item ashcache.Item) ([]byte, error) {
+		_, _ = c.Get("test"+string(rune(i)), func(item model2.Item) ([]byte, error) {
 			return []byte("data"), nil
 		})
 	}
@@ -268,13 +268,13 @@ func TestCache_OnTTL_RemoveMode(t *testing.T) {
 
 	c := New(ctx, cfg, slog.Default())
 
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), nil)
+	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), c.removeCallback)
 	entry.SetPayload([]byte("data"))
 	c.set(entry)
 
 	require.Equal(t, int64(1), c.Len())
 
-	err := c.OnTTL(entry)
+	_, err := entry.OnTTL()
 
 	require.NoError(t, err)
 	require.Equal(t, int64(0), c.Len(), "should remove expired entry")
@@ -297,16 +297,16 @@ func TestCache_OnTTL_RefreshMode(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	var updateCalled bool
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), func(item ashcache.Item) ([]byte, error) {
+	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), func(item model2.Item) ([]byte, error) {
 		updateCalled = true
 		return []byte("refreshed"), nil
 	})
 	entry.SetPayload([]byte("data"))
 	c.set(entry)
 
-	err := c.OnTTL(entry)
-
+	_, err := entry.OnTTL()
 	require.NoError(t, err)
+
 	require.True(t, updateCalled, "should call Update in refresh mode")
 	require.Equal(t, []byte("refreshed"), entry.PayloadBytes())
 }

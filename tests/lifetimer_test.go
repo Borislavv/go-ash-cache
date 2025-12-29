@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	ashcache "github.com/Borislavv/go-ash-cache"
+	"github.com/Borislavv/go-ash-cache/model"
 	"github.com/Borislavv/go-ash-cache/tests/help"
 	"github.com/stretchr/testify/require"
 	"sync/atomic"
@@ -17,7 +18,7 @@ func TestLifetimerRefreshingEntries(t *testing.T) {
 
 	var refreshes = &atomic.Int64{}
 	for i := 0; i < 100; i++ {
-		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
+		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.Item) ([]byte, error) {
 			item.SetTTL(time.Second * 2)
 			data := make([]byte, 128)
 			refreshes.Add(1)
@@ -54,7 +55,7 @@ func TestLifetimerStochasticRefreshingEntries(t *testing.T) {
 
 	var refreshes = &atomic.Int64{}
 	for i := 0; i < 100; i++ {
-		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
+		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.Item) ([]byte, error) {
 			item.SetTTL(time.Second * 2)
 			data := make([]byte, 128)
 			refreshes.Add(1)
@@ -90,7 +91,7 @@ func TestLifetimerRemoveAllEntries(t *testing.T) {
 	cache := ashcache.New(t.Context(), lifetimerRemoveModelTestCfg, help.Logger())
 
 	for i := 0; i < 100; i++ {
-		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
+		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.Item) ([]byte, error) {
 			item.SetTTL(time.Second)
 			data := make([]byte, 128)
 			return data, nil
@@ -123,7 +124,7 @@ func TestLifetimerDontRemoveBeforeTTLExpired(t *testing.T) {
 	cache := ashcache.New(t.Context(), lifetimerRemoveModelTestCfg, help.Logger())
 
 	for i := 0; i < 100; i++ {
-		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
+		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.Item) ([]byte, error) {
 			item.SetTTL(time.Second * 6)
 			data := make([]byte, 128)
 			return data, nil
@@ -158,7 +159,7 @@ func TestLifetimerStochasticRemoveBeforeTTLExpired(t *testing.T) {
 	cache := ashcache.New(t.Context(), lifetimerRemoveModelTestCfg, help.Logger())
 
 	for i := 0; i < 100; i++ {
-		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item ashcache.Item) ([]byte, error) {
+		_, err := cache.Get(fmt.Sprintf("key-%d", i), func(item model.Item) ([]byte, error) {
 			item.SetTTL(time.Second * 6)
 			data := make([]byte, 128)
 			return data, nil

@@ -254,7 +254,7 @@ func TestShard_LRUPeekHeadK_SelectsFirstMatch(t *testing.T) {
 	}
 
 	// Find entry with key 2 (should be in first 3 from head)
-	// Note: We need to find by the map key (uint64), not by Key().Value() which is a hash
+	// Note: We need to find by the map key (uint64), not by GetKey().Value() which is a hash
 	var targetEntry *model.Entry
 	sh.RLock()
 	targetEntry = sh.items[2]
@@ -284,7 +284,7 @@ func TestShard_LRUPeekTailK_SelectsFirstMatch(t *testing.T) {
 	}
 
 	// Find entry with key 2 (should be in first 3 from tail)
-	// Note: We need to find by the map key (uint64), not by Key().Value() which is a hash
+	// Note: We need to find by the map key (uint64), not by GetKey().Value() which is a hash
 	var targetEntry *model.Entry
 	sh.RLock()
 	targetEntry = sh.items[2]

@@ -1,19 +1,25 @@
-package ashcache
+package model
 
 import (
 	"github.com/Borislavv/go-ash-cache/config"
-	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
 	"time"
 )
 
+type TTLMode int32
+
+const (
+	TTLModeRefresh TTLMode = iota
+	TTLModeRemove
+)
+
 type Item interface {
+	Key() *Key
 	SetTTL(ttl time.Duration)
 	SetTTLMode(mode TTLMode)
 }
 
 type CacheItem interface {
 	Item
-	Key() *model.Key
 	Update() error
 	PayloadBytes() []byte
 	SetPayload([]byte)
