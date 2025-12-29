@@ -12,7 +12,7 @@ import (
 func TestShard_Set_Insert(t *testing.T) {
 	sh := NewShard(0)
 	key := uint64(123)
-	entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry := model.NewEntry(model.NewKey("test"), 0, false)
 	entry.SetPayload([]byte("data"))
 
 	bytesDelta, lenDelta := sh.Set(key, entry)
@@ -27,9 +27,9 @@ func TestShard_Set_Insert(t *testing.T) {
 func TestShard_Set_Update(t *testing.T) {
 	sh := NewShard(0)
 	key := uint64(123)
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("small"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload(make([]byte, 1024)) // larger payload
 
 	sh.Set(key, entry1)
@@ -44,7 +44,7 @@ func TestShard_Set_Update(t *testing.T) {
 func TestShard_Get_Exists(t *testing.T) {
 	sh := NewShard(0)
 	key := uint64(123)
-	entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry := model.NewEntry(model.NewKey("test"), 0, false)
 	entry.SetPayload([]byte("data"))
 
 	sh.Set(key, entry)
@@ -67,7 +67,7 @@ func TestShard_Get_NotExists(t *testing.T) {
 func TestShard_Remove_Exists(t *testing.T) {
 	sh := NewShard(0)
 	key := uint64(123)
-	entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry := model.NewEntry(model.NewKey("test"), 0, false)
 	entry.SetPayload([]byte("data"))
 
 	sh.Set(key, entry)
@@ -93,7 +93,7 @@ func TestShard_Remove_NotExists(t *testing.T) {
 func TestShard_Clear_RemovesAllEntries(t *testing.T) {
 	sh := NewShard(0)
 	for i := 0; i < 10; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Set(uint64(i), entry)
 	}
@@ -121,7 +121,7 @@ func TestShard_ConcurrentSetGet(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < opsPerGoroutine; j++ {
 				key := uint64(id*opsPerGoroutine + j)
-				entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+				entry := model.NewEntry(model.NewKey("test"), 0, false)
 				entry.SetPayload([]byte("data"))
 				sh.Set(key, entry)
 			}
@@ -149,7 +149,7 @@ func TestShard_WalkR_IteratesAllEntries(t *testing.T) {
 	expected := make(map[uint64]bool)
 	for i := 0; i < 10; i++ {
 		key := uint64(i)
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Set(key, entry)
 		expected[key] = true
@@ -172,7 +172,7 @@ func TestShard_WalkR_IteratesAllEntries(t *testing.T) {
 func TestShard_WalkR_RespectsContextCancel(t *testing.T) {
 	sh := NewShard(0)
 	for i := 0; i < 100; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Set(uint64(i), entry)
 	}
@@ -194,7 +194,7 @@ func TestShard_WalkR_RespectsContextCancel(t *testing.T) {
 func TestShard_WalkR_StopsOnFalse(t *testing.T) {
 	sh := NewShard(0)
 	for i := 0; i < 10; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Set(uint64(i), entry)
 	}
@@ -260,7 +260,7 @@ func TestShard_ConcurrentRemove(t *testing.T) {
 
 	// Insert keys
 	for i := 0; i < numKeys; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Set(uint64(i), entry)
 	}

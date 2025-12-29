@@ -26,7 +26,7 @@ func TestMap_EvictUntilWithinLimit_ListingMode(t *testing.T) {
 
 	// Fill cache with entries
 	for i := 0; i < 100; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload(make([]byte, 100*1024)) // 100KB each
 		m.Set(uint64(i), entry)
 	}
@@ -60,7 +60,7 @@ func TestMap_EvictUntilWithinLimit_SamplingMode(t *testing.T) {
 
 	// Fill cache with entries
 	for i := 0; i < 100; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload(make([]byte, 100*1024)) // 100KB each
 		m.Set(uint64(i), entry)
 	}
@@ -88,9 +88,9 @@ func TestMap_PickVictim_ListingMode(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Insert entries with different access times
-	entry1 := model.NewEmptyEntry(model.NewKey("old"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("old"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("new"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("new"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	m.Set(1, entry1)
@@ -120,7 +120,7 @@ func TestMap_PickVictim_SamplingMode(t *testing.T) {
 
 	// Insert entries
 	for i := 0; i < 20; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		m.Set(uint64(i), entry)
 	}
@@ -167,7 +167,7 @@ func TestMap_EvictUntilWithinLimit_RespectsMinLimit(t *testing.T) {
 
 	// Fill cache just above soft limit
 	for i := 0; i < 10; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload(make([]byte, 1024*1024)) // 1MB each
 		m.Set(uint64(i), entry)
 	}
@@ -197,7 +197,7 @@ func TestMap_EvictUntilWithinLimit_StopsWhenEmpty(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Add one entry
-	entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry := model.NewEntry(model.NewKey("test"), 0, false)
 	entry.SetPayload(make([]byte, 1024))
 	key := entry.Key().Value()
 	m.Set(key, entry)

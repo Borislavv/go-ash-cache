@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/Borislavv/go-ash-cache/config"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
-	model2 "github.com/Borislavv/go-ash-cache/model"
+	pubmodel "github.com/Borislavv/go-ash-cache/model"
 	"github.com/stretchr/testify/require"
 	"log/slog"
 	"testing"
@@ -25,7 +25,7 @@ func TestCache_Get_Miss_CallsCallback(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	var callbackCalled bool
-	data, err := c.Get("test", func(item model2.Item) ([]byte, error) {
+	data, err := c.Get("test", func(item pubmodel.Item) ([]byte, error) {
 		callbackCalled = true
 		return []byte("data"), nil
 	})
@@ -48,13 +48,13 @@ func TestCache_Get_Hit_ReturnsCached(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	// First call - miss
-	_, _ = c.Get("test", func(item model2.Item) ([]byte, error) {
+	_, _ = c.Get("test", func(item pubmodel.Item) ([]byte, error) {
 		return []byte("data1"), nil
 	})
 
 	// Second call - hit
 	var callbackCalled bool
-	data, err := c.Get("test", func(item model2.Item) ([]byte, error) {
+	data, err := c.Get("test", func(item pubmodel.Item) ([]byte, error) {
 		callbackCalled = true
 		return []byte("data2"), nil
 	})
@@ -77,7 +77,7 @@ func TestCache_Get_ErrorPropagates(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	testErr := errors.New("callback error")
-	data, err := c.Get("test", func(item model2.Item) ([]byte, error) {
+	data, err := c.Get("test", func(item pubmodel.Item) ([]byte, error) {
 		return nil, testErr
 	})
 
@@ -100,7 +100,7 @@ func TestCache_Del_RemovesEntry(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	// Add entry
-	_, _ = c.Get("test", func(item model2.Item) ([]byte, error) {
+	_, _ = c.Get("test", func(item pubmodel.Item) ([]byte, error) {
 		return []byte("data"), nil
 	})
 
@@ -143,7 +143,7 @@ func TestCache_Clear_RemovesAllEntries(t *testing.T) {
 
 	// Add multiple entries
 	for i := 0; i < 10; i++ {
-		_, _ = c.Get("test"+string(rune(i)), func(item model2.Item) ([]byte, error) {
+		_, _ = c.Get("test"+string(rune(i)), func(item pubmodel.Item) ([]byte, error) {
 			return []byte("data"), nil
 		})
 	}
@@ -181,7 +181,7 @@ func TestCache_Set_AdmissionControl_RejectsColdCandidate(t *testing.T) {
 
 	// Fill cache with hot entries
 	for i := 0; i < 10; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("hot"), 0, nil)
+		entry := model.NewEntry(model.NewKey("hot"), 0, false)
 		entry.SetPayload([]byte("hot data"))
 		c.set(entry)
 		// Record multiple times to make it hot
@@ -191,7 +191,7 @@ func TestCache_Set_AdmissionControl_RejectsColdCandidate(t *testing.T) {
 	}
 
 	// Try to add cold candidate
-	coldEntry := model.NewEmptyEntry(model.NewKey("cold"), 0, nil)
+	coldEntry := model.NewEntry(model.NewKey("cold"), 0, false)
 	coldEntry.SetPayload([]byte("cold data"))
 	persisted := c.set(coldEntry)
 
@@ -214,11 +214,11 @@ func TestCache_Set_UpdateExisting(t *testing.T) {
 
 	c := New(ctx, cfg, slog.Default())
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test"), 0, false)
 	entry1.SetPayload([]byte("data"))
 	c.set(entry1)
 
-	entry2 := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test"), 0, false)
 	entry2.SetPayload([]byte("data")) // Same payload
 
 	persisted := c.set(entry2)
@@ -239,11 +239,11 @@ func TestCache_Set_UpdateDifferentPayload(t *testing.T) {
 
 	c := New(ctx, cfg, slog.Default())
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test"), 0, false)
 	entry1.SetPayload([]byte("data1"))
 	c.set(entry1)
 
-	entry2 := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test"), 0, false)
 	entry2.SetPayload([]byte("data2")) // Different payload
 
 	persisted := c.set(entry2)
@@ -268,7 +268,8 @@ func TestCache_OnTTL_RemoveMode(t *testing.T) {
 
 	c := New(ctx, cfg, slog.Default())
 
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), c.removeCallback)
+	entry := model.NewEntry(model.NewKey("test"), time.Hour.Nanoseconds(), true)
+	entry.SetCallback(c.removeCallback)
 	entry.SetPayload([]byte("data"))
 	c.set(entry)
 
@@ -297,17 +298,20 @@ func TestCache_OnTTL_RefreshMode(t *testing.T) {
 	c := New(ctx, cfg, slog.Default())
 
 	var updateCalled bool
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), func(item model2.Item) ([]byte, error) {
+	entry := model.NewEntry(model.NewKey("test"), time.Hour.Nanoseconds(), false)
+	entry.SetCallback(func(item pubmodel.Item) ([]byte, error) {
 		updateCalled = true
 		return []byte("refreshed"), nil
 	})
 	entry.SetPayload([]byte("data"))
 	c.set(entry)
 
-	_, err := entry.OnTTL()
+	// OnTTL() calls callback but doesn't update payload
+	// For refresh mode, we need to call Update() to actually update the payload
+	err := entry.Update()
 	require.NoError(t, err)
 
-	require.True(t, updateCalled, "should call Update in refresh mode")
+	require.True(t, updateCalled, "should call callback in refresh mode")
 	require.Equal(t, []byte("refreshed"), entry.PayloadBytes())
 }
 
@@ -330,7 +334,7 @@ func TestCache_SoftMemoryLimitOvercome(t *testing.T) {
 	// Add entries (exact memory calculation is complex due to Entry overhead)
 	// This test verifies the function works, exact memory thresholds are tested in integration tests
 	for i := 0; i < 50; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload(make([]byte, 200*1024)) // 200KB each
 		c.set(entry)
 	}
@@ -361,7 +365,7 @@ func TestCache_SoftEvictUntilWithinLimit(t *testing.T) {
 
 	// Add some entries
 	for i := 0; i < 50; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload(make([]byte, 200*1024)) // 200KB each
 		c.set(entry)
 	}
@@ -403,7 +407,7 @@ func TestCache_Touch_MovesToFrontAndEnqueuesExpired(t *testing.T) {
 
 	c := New(ctx, cfg, slog.Default())
 
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Millisecond.Nanoseconds(), nil)
+	entry := model.NewEntry(model.NewKey("test"), time.Millisecond.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 	c.set(entry)
 

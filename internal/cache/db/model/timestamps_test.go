@@ -8,7 +8,7 @@ import (
 
 // TestEntry_SetTTL sets TTL correctly.
 func TestEntry_SetTTL(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 	ttl := 1 * time.Hour
 
 	entry.SetTTL(ttl)
@@ -20,7 +20,7 @@ func TestEntry_SetTTL(t *testing.T) {
 
 // TestEntry_RenewTouchedAt updates touchedAt timestamp.
 func TestEntry_RenewTouchedAt(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 	entry.SetPayload([]byte("data"))
 
 	initial := entry.TouchedAt()
@@ -34,7 +34,7 @@ func TestEntry_RenewTouchedAt(t *testing.T) {
 
 // TestEntry_RenewUpdatedAt updates updatedAt timestamp.
 func TestEntry_RenewUpdatedAt(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 	entry.SetPayload([]byte("data"))
 
 	initial := entry.UpdatedAt()
@@ -48,7 +48,7 @@ func TestEntry_RenewUpdatedAt(t *testing.T) {
 
 // TestEntry_UntouchRefreshedAt sets updatedAt to past time.
 func TestEntry_UntouchRefreshedAt(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), time.Hour.Nanoseconds(), nil)
+	entry := NewEntry(NewKey("test"), time.Hour.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 
 	initial := entry.UpdatedAt()
@@ -60,7 +60,7 @@ func TestEntry_UntouchRefreshedAt(t *testing.T) {
 
 // TestEntry_TouchedAt returns current touchedAt value.
 func TestEntry_TouchedAt(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 	
 	// SetPayload sets touchedAt via cachedtime
 	entry.SetPayload([]byte("data"))
@@ -72,7 +72,7 @@ func TestEntry_TouchedAt(t *testing.T) {
 
 // TestEntry_UpdatedAt returns current updatedAt value.
 func TestEntry_UpdatedAt(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 	
 	// SetPayload sets updatedAt via cachedtime
 	entry.SetPayload([]byte("data"))

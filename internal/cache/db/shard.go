@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
 	"github.com/Borislavv/go-ash-cache/internal/shared/queue"
-	model2 "github.com/Borislavv/go-ash-cache/model"
+	pubmodel "github.com/Borislavv/go-ash-cache/model"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -137,7 +137,7 @@ func (sh *Shard) WalkR(ctx context.Context, fn func(uint64, *model.Entry) bool) 
 }
 
 // Walk iterates (k,v) under a shared lock. The callback must be lightweight.
-func (sh *Shard) Walk(ctx context.Context, fn func(cache model2.CacheItem) bool, write bool) {
+func (sh *Shard) Walk(ctx context.Context, fn func(cache pubmodel.CacheItem) bool, write bool) {
 	if write {
 		sh.Lock()
 		defer sh.Unlock()

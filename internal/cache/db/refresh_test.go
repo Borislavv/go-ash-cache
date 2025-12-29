@@ -28,7 +28,7 @@ func TestMap_PeekExpiredTTL_FromQueue(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Create entry and set it
-	entry := model.NewEmptyEntry(model.NewKey("test"), 100*time.Millisecond.Nanoseconds(), nil)
+	entry := model.NewEntry(model.NewKey("test"), 100*time.Millisecond.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 	key := entry.Key().Value()
 	m.Set(key, entry)
@@ -74,7 +74,7 @@ func TestMap_PeekExpiredTTL_FromSampling(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Create entry and set it
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Millisecond.Nanoseconds(), nil)
+	entry := model.NewEntry(model.NewKey("test"), time.Millisecond.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 	key := entry.Key().Value()
 	m.Set(key, entry)
@@ -120,7 +120,7 @@ func TestMap_PeekExpiredTTL_NoExpired(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Create non-expired entry
-	entry := model.NewEmptyEntry(model.NewKey("test"), time.Hour.Nanoseconds(), nil)
+	entry := model.NewEntry(model.NewKey("test"), time.Hour.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 	m.Set(entry.Key().Value(), entry)
 
@@ -182,12 +182,12 @@ func TestMap_PeekExpiredByQueues_ReturnsOldestExpired(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Create two entries
-	entry1 := model.NewEmptyEntry(model.NewKey("old"), 100*time.Millisecond.Nanoseconds(), nil)
+	entry1 := model.NewEntry(model.NewKey("old"), 100*time.Millisecond.Nanoseconds(), false)
 	entry1.SetPayload([]byte("data1"))
 	key1 := entry1.Key().Value()
 	m.Set(key1, entry1)
 
-	entry2 := model.NewEmptyEntry(model.NewKey("new"), 100*time.Millisecond.Nanoseconds(), nil)
+	entry2 := model.NewEntry(model.NewKey("new"), 100*time.Millisecond.Nanoseconds(), false)
 	entry2.SetPayload([]byte("data2"))
 	key2 := entry2.Key().Value()
 	m.Set(key2, entry2)
@@ -235,7 +235,7 @@ func TestMap_PeekExpiredBySampling_FindsExpired(t *testing.T) {
 	m := NewMap(ctx, cfg)
 
 	// Create entry and set it
-	entry := model.NewEmptyEntry(model.NewKey("test"), 100*time.Millisecond.Nanoseconds(), nil)
+	entry := model.NewEntry(model.NewKey("test"), 100*time.Millisecond.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 	key := entry.Key().Value()
 	m.Set(key, entry)
@@ -277,7 +277,7 @@ func TestMap_PeekExpiredBySampling_RespectsSampleLimit(t *testing.T) {
 
 	// Create many non-expired entries
 	for i := 0; i < 100; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		m.Set(uint64(i), entry)
 	}
