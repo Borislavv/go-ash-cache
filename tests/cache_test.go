@@ -3,7 +3,7 @@ package tests
 import (
 	"fmt"
 	"github.com/Borislavv/go-ash-cache"
-	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
+	"github.com/Borislavv/go-ash-cache/model"
 	"github.com/Borislavv/go-ash-cache/tests/help"
 	"github.com/stretchr/testify/require"
 	"sync/atomic"
@@ -20,7 +20,7 @@ func TestCache(t *testing.T) {
 		testResp = []byte("test response")
 	)
 	for i := 0; i < 1000; i++ {
-		payload, err = cache.Get("hello_world", func(item model.AshItem) (resp []byte, respErr error) {
+		payload, err = cache.Get("hello_world", func(item model.Item) (resp []byte, respErr error) {
 			atomic.AddUint64(&invokes, 1)
 			return testResp, nil
 		})
@@ -41,7 +41,7 @@ func TestCacheKeyRespected(t *testing.T) {
 		testResp = "test response: #%d"
 	)
 	for i := 0; i < 1000; i++ {
-		payload, err = cache.Get(fmt.Sprintf("hello_world_%d", i), func(item model.AshItem) (resp []byte, respErr error) {
+		payload, err = cache.Get(fmt.Sprintf("hello_world_%d", i), func(item model.Item) (resp []byte, respErr error) {
 			atomic.AddUint64(&invokes, 1)
 			return []byte(fmt.Sprintf(testResp, i)), nil
 		})
@@ -57,7 +57,7 @@ func TestCacheErrPropagates(t *testing.T) {
 
 	var invokes uint64
 	for i := 0; i < 1000; i++ {
-		_, err := cache.Get(fmt.Sprintf("hello_world_%d", i), func(item model.AshItem) (resp []byte, respErr error) {
+		_, err := cache.Get(fmt.Sprintf("hello_world_%d", i), func(item model.Item) (resp []byte, respErr error) {
 			atomic.AddUint64(&invokes, 1)
 			return nil, fmt.Errorf("error #%d", i)
 		})

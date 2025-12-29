@@ -1,44 +1,37 @@
 package model
 
 import (
-	"github.com/Borislavv/go-ash-cache/config"
+	"github.com/Borislavv/go-ash-cache/model"
 	"sync/atomic"
-	"time"
 )
 
-type AshCacheItem interface {
-	AshItem
-	Key() *Key
-	Update() error
-	PayloadBytes() []byte
-	SetPayload([]byte)
-	IsExpired(cfg *config.Cache) bool
-	UpdatedAt() int64
-	TouchedAt() int64
-	Weight() int64
-}
-
-type AshItem interface {
-	SetTTL(ttl time.Duration)
-}
+type TTLCallback func(entry model.Item) ([]byte, error)
 
 type Entry struct {
-	key               *Key                    // 64 bit xxh + hi + lo for manage collisions
+	key               *model.Key              // 64 bit xxh + hi + lo for manage collisions
 	ttl               int64                   // atomic: unix nano (used for refresh/remove entry)
-	isQueuedOnRefresh int64                   // atomic: int as bool; whether an item is queued on update
+	isQueuedOnRefresh int32                   // atomic: int as bool; whether an item is queued on update
+	isRemoveOnTTL     int32                   // atomic: int as bool; whether an item should be removed on TTL exceeded
 	payload           *atomic.Pointer[[]byte] // atomic: payload ([]byte)
-	callback          func(entry AshItem) ([]byte, error)
+	callback          TTLCallback
 	touchedAt         int64 // atomic: unix nano (used in LRU algo.)
 	updatedAt         int64 // atomic: unix nano (used for refresh entry)
 }
 
-func NewEmptyEntry(key *Key, cfgTTL int64, callback func(entry AshItem) ([]byte, error)) *Entry {
-	return &Entry{
-		key:      key,
-		ttl:      cfgTTL,
-		callback: callback,
-		payload:  &atomic.Pointer[[]byte]{},
+func NewEntry(key *model.Key, ttl int64, isRemoveOnTTL bool) *Entry {
+	e := &Entry{
+		key:     key,
+		ttl:     ttl,
+		payload: &atomic.Pointer[[]byte]{},
 	}
+	if isRemoveOnTTL {
+		e.isRemoveOnTTL = 1
+	}
+	return e
+}
+
+func (e *Entry) OnTTL() ([]byte, error) {
+	return e.callback(e)
 }
 
 func (e *Entry) Update() error {
@@ -48,4 +41,9 @@ func (e *Entry) Update() error {
 	}
 	e.payload.Store(&payload)
 	return nil
+}
+
+// SetCallback is NOT CONCURRENT SAFE!
+func (e *Entry) SetCallback(callback TTLCallback) {
+	e.callback = callback
 }

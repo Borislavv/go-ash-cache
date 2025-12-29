@@ -21,7 +21,7 @@ func TestShard_EnableLRU_WithExistingEntries(t *testing.T) {
 	sh := NewShard(0)
 	// Add entries before enabling LRU
 	for i := 0; i < 5; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Set(uint64(i), entry)
 	}
@@ -49,9 +49,9 @@ func TestShard_LRUOnInsert_AddsToFront(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	sh.Lock()
@@ -72,9 +72,9 @@ func TestShard_LRUOnAccess_MovesToFront(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	sh.Lock()
@@ -97,9 +97,9 @@ func TestShard_LRUOnDelete_RemovesFromList(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	sh.Lock()
@@ -120,11 +120,11 @@ func TestShard_LRUPeekTail_ReturnsLeastRecent(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
-	entry3 := model.NewEmptyEntry(model.NewKey("test3"), 0, nil)
+	entry3 := model.NewEntry(model.NewKey("test3"), 0, false)
 	entry3.SetPayload([]byte("data3"))
 
 	sh.Lock()
@@ -166,9 +166,9 @@ func TestShard_LRUPopTail_RemovesAndReturns(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	sh.Lock()
@@ -194,9 +194,9 @@ func TestShard_LRUPeekHead_ReturnsMostRecent(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	sh.Lock()
@@ -218,9 +218,9 @@ func TestShard_TouchLRU_MovesToFront(t *testing.T) {
 	sh := NewShard(0)
 	sh.enableLRU()
 
-	entry1 := model.NewEmptyEntry(model.NewKey("test1"), 0, nil)
+	entry1 := model.NewEntry(model.NewKey("test1"), 0, false)
 	entry1.SetPayload([]byte("data1"))
-	entry2 := model.NewEmptyEntry(model.NewKey("test2"), 0, nil)
+	entry2 := model.NewEntry(model.NewKey("test2"), 0, false)
 	entry2.SetPayload([]byte("data2"))
 
 	sh.Lock()
@@ -245,7 +245,7 @@ func TestShard_LRUPeekHeadK_SelectsFirstMatch(t *testing.T) {
 	sh.enableLRU()
 
 	for i := 0; i < 5; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Lock()
 		sh.items[uint64(i)] = entry
@@ -254,7 +254,7 @@ func TestShard_LRUPeekHeadK_SelectsFirstMatch(t *testing.T) {
 	}
 
 	// Find entry with key 2 (should be in first 3 from head)
-	// Note: We need to find by the map key (uint64), not by Key().Value() which is a hash
+	// Note: We need to find by the map key (uint64), not by GetKey().Value() which is a hash
 	var targetEntry *model.Entry
 	sh.RLock()
 	targetEntry = sh.items[2]
@@ -275,7 +275,7 @@ func TestShard_LRUPeekTailK_SelectsFirstMatch(t *testing.T) {
 	sh.enableLRU()
 
 	for i := 0; i < 5; i++ {
-		entry := model.NewEmptyEntry(model.NewKey("test"), 0, nil)
+		entry := model.NewEntry(model.NewKey("test"), 0, false)
 		entry.SetPayload([]byte("data"))
 		sh.Lock()
 		sh.items[uint64(i)] = entry
@@ -284,7 +284,7 @@ func TestShard_LRUPeekTailK_SelectsFirstMatch(t *testing.T) {
 	}
 
 	// Find entry with key 2 (should be in first 3 from tail)
-	// Note: We need to find by the map key (uint64), not by Key().Value() which is a hash
+	// Note: We need to find by the map key (uint64), not by GetKey().Value() which is a hash
 	var targetEntry *model.Entry
 	sh.RLock()
 	targetEntry = sh.items[2]

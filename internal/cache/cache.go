@@ -6,6 +6,7 @@ import (
 	"github.com/Borislavv/go-ash-cache/internal/cache/db"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/bloom"
 	"github.com/Borislavv/go-ash-cache/internal/cache/db/model"
+	pubmodel "github.com/Borislavv/go-ash-cache/model"
 	"log/slog"
 	"runtime"
 )
@@ -13,9 +14,9 @@ import (
 const shardsSample, keysSample, spinsBackoff = 2, 8, 32
 
 type Cacher interface {
-	Get(key string, callback func(item model.AshItem) ([]byte, error)) (data []byte, err error)
+	Get(key string, callback func(item pubmodel.Item) ([]byte, error)) (data []byte, err error)
 	CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvictedItems, hardEvictedBytes int64)
-	Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool)
+	Around(ctx context.Context, fn func(item pubmodel.CacheItem) bool, rw bool)
 	Del(key string) (ok bool)
 	Clear()
 	Len() int64
@@ -41,7 +42,7 @@ func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	}
 }
 
-func (c *Cache) Get(key string, callback func(item model.AshItem) ([]byte, error)) (data []byte, err error) {
+func (c *Cache) Get(key string, callback func(item pubmodel.Item) ([]byte, error)) (data []byte, err error) {
 	k := model.NewKey(key)
 	if entry, ok := c.get(k.Value()); ok {
 		if entry.Key().IsTheSame(k) {
@@ -50,15 +51,26 @@ func (c *Cache) Get(key string, callback func(item model.AshItem) ([]byte, error
 		// hash collision
 	}
 
-	entry := c.makeEntry(k, callback)
-	resp, respErr := callback(entry)
-	if respErr != nil {
-		return nil, respErr
+	entry := model.NewEntry(k, c.cfgTTLNanoseconds(), c.cfgTTLModeIsRemoveOnTTL())
+
+	// compute response
+	payload, err := callback(entry)
+	if err != nil {
+		return payload, err
 	}
-	entry.SetPayload(resp)
+	entry.SetPayload(payload)
+
+	// this value could be changed in callback; so set after exec. of callback(entry)
+	if entry.IsRemoveByTTL() {
+		entry.SetCallback(c.removeCallback)
+	} else {
+		entry.SetCallback(callback)
+	}
+
+	// publish entry to common access; after this moment all accesses should be concurrent safe
 	c.set(entry)
 
-	return resp, nil
+	return payload, err
 }
 
 func (c *Cache) Del(key string) bool {
@@ -66,22 +78,13 @@ func (c *Cache) Del(key string) bool {
 
 	if entry, ok := c.get(k.Value()); ok {
 		if entry.Key().IsTheSame(k) {
-			_, ok = c.remove(entry)
+			c.db.Remove(entry.Key().Value())
 			return ok
 		}
 		// hash collision
 	}
 
 	return true
-}
-
-func (c *Cache) OnTTL(entry *model.Entry) error {
-	if c.cfg.Lifetime.IsRemoveOnTTL {
-		c.remove(entry)
-		return nil
-	} else {
-		return entry.Update()
-	}
 }
 
 func (c *Cache) Len() int64 { return c.db.Len() }
@@ -92,7 +95,7 @@ func (c *Cache) CacheMetrics() (admissionAllowed, admissionNotAllowed, hardEvict
 	return c.counters.snapshot()
 }
 
-func (c *Cache) Around(ctx context.Context, fn func(item model.AshCacheItem) bool, rw bool) {
+func (c *Cache) Around(ctx context.Context, fn func(item pubmodel.CacheItem) bool, rw bool) {
 	c.db.WalkShardsConcurrent(ctx, runtime.GOMAXPROCS(0), func(key uint64, shard *db.Shard) {
 		shard.Walk(ctx, fn, rw)
 	})
@@ -185,15 +188,23 @@ func (c *Cache) update(existing, in *model.Entry) {
 	c.db.Touch(existing.Key().Value())
 }
 
-func (c *Cache) makeEntry(key *model.Key, callback func(entry model.AshItem) ([]byte, error)) *model.Entry {
-	return model.NewEmptyEntry(key, c.cfgTTLNanoseconds(), callback)
-}
-
 func (c *Cache) cfgTTLNanoseconds() int64 {
 	if c.cfg.Lifetime.Enabled() {
 		return c.cfg.Lifetime.TTL.Nanoseconds()
 	}
 	return 0
+}
+
+func (c *Cache) cfgTTLModeIsRemoveOnTTL() bool {
+	if c.cfg.Lifetime.Enabled() {
+		return c.cfg.Lifetime.IsRemoveOnTTL
+	}
+	return true
+}
+
+func (c *Cache) removeCallback(entry pubmodel.Item) ([]byte, error) {
+	c.db.Remove(entry.Key().Value())
+	return nil, nil
 }
 
 func (c *Cache) remove(entry *model.Entry) (int64, bool) { return c.db.Remove(entry.Key().Value()) }

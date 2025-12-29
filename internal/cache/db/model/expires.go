@@ -63,9 +63,9 @@ func (e *Entry) isProbablyExpired(beta, coefficient float64) bool {
 }
 
 func (e *Entry) EnqueueExpired() bool {
-	return atomic.CompareAndSwapInt64(&e.isQueuedOnRefresh, 0, 1)
+	return atomic.CompareAndSwapInt32(&e.isQueuedOnRefresh, 0, 1)
 }
 
 func (e *Entry) DequeueExpired() {
-	atomic.StoreInt64(&e.isQueuedOnRefresh, 0)
+	atomic.StoreInt32(&e.isQueuedOnRefresh, 0)
 }

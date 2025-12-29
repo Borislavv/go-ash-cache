@@ -17,7 +17,7 @@ func TestEntry_IsExpired_NoTTL(t *testing.T) {
 	}
 	cfg.AdjustConfig()
 
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 	entry.SetPayload([]byte("data"))
 
 	require.False(t, entry.IsExpired(cfg), "entry without TTL should not be expired")
@@ -36,7 +36,7 @@ func TestEntry_IsExpired_NotExpired(t *testing.T) {
 	}
 	cfg.AdjustConfig()
 
-	entry := NewEmptyEntry(NewKey("test"), time.Hour.Nanoseconds(), nil)
+	entry := NewEntry(NewKey("test"), time.Hour.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 
 	require.False(t, entry.IsExpired(cfg), "recently set entry should not be expired")
@@ -57,7 +57,7 @@ func TestEntry_IsExpired_Expired(t *testing.T) {
 	}
 	cfg.AdjustConfig()
 
-	entry := NewEmptyEntry(NewKey("test"), time.Millisecond.Nanoseconds(), nil)
+	entry := NewEntry(NewKey("test"), time.Millisecond.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 
 	// Set updatedAt to past using UntouchRefreshedAt
@@ -74,7 +74,7 @@ func TestEntry_IsExpired_Expired(t *testing.T) {
 
 // TestEntry_QueueExpired sets and checks queue flag atomically.
 func TestEntry_QueueExpired(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 
 	// First call should succeed
 	require.True(t, entry.EnqueueExpired())
@@ -85,7 +85,7 @@ func TestEntry_QueueExpired(t *testing.T) {
 
 // TestEntry_DequeueExpired clears queue flag.
 func TestEntry_DequeueExpired(t *testing.T) {
-	entry := NewEmptyEntry(NewKey("test"), 0, nil)
+	entry := NewEntry(NewKey("test"), 0, false)
 
 	entry.EnqueueExpired()
 	entry.DequeueExpired()
@@ -110,7 +110,7 @@ func TestEntry_IsProbablyExpired_Stochastic(t *testing.T) {
 	}
 	cfg.AdjustConfig()
 
-	entry := NewEmptyEntry(NewKey("test"), time.Hour.Nanoseconds(), nil)
+	entry := NewEntry(NewKey("test"), time.Hour.Nanoseconds(), false)
 	entry.SetPayload([]byte("data"))
 
 	// Test that IsExpired with stochastic mode doesn't panic

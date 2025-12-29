@@ -39,7 +39,7 @@ func (e *Entry) SetPayload(p []byte) {
 	now := cachedtime.Now().UnixNano()
 	atomic.StoreInt64(&e.touchedAt, now)
 	atomic.StoreInt64(&e.updatedAt, now)
-	atomic.StoreInt64(&e.isQueuedOnRefresh, 0)
+	atomic.StoreInt32(&e.isQueuedOnRefresh, 0)
 	e.setUpNewKey(p)
 	e.payload.Store(&p)
 }

@@ -121,7 +121,8 @@ func (w *LifetimeWorker) consumer() {
 		case <-w.ctx.Done():
 			return
 		case entry := <-w.invokeCh:
-			if err := w.cache.OnTTL(entry); err == nil {
+			_, err := entry.OnTTL()
+			if err == nil {
 				w.counters.affected.Add(1)
 			} else {
 				w.counters.errors.Add(1)
