@@ -35,7 +35,6 @@ func New(
 	cache cache.Cacher,
 	evictor evictor.Evictor,
 	lifetimer lifetimer.Lifetimer,
-	interval time.Duration,
 ) *Logs {
 	ctx, cancel := context.WithCancel(ctx)
 	return (&Logs{
@@ -46,7 +45,7 @@ func New(
 		cache:     cache,
 		evictor:   evictor,
 		lifetimer: lifetimer,
-		interval:  interval,
+		interval:  cfg.DB.TelemetryLogsInterval,
 	}).run()
 }
 
