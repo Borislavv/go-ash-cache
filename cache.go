@@ -35,7 +35,7 @@ func New(ctx context.Context, cfg *config.Cache, logger *slog.Logger) *Cache {
 	cacher := cache.New(ctx, cfg, logger)
 	eviction := evictor.New(ctx, cfg.Eviction, logger, cacher)
 	lifetime := lifetimer.New(ctx, cfg.Lifetime, logger, cacher)
-	telemeter := telemetry.New(ctx, cfg, logger, cacher, eviction, lifetime, cfg.DB.TelemetryLogsInterval)
+	telemeter := telemetry.New(ctx, cfg, logger, cacher, eviction, lifetime)
 	return &Cache{CancelFunc: cancel, Cacher: cacher, Evictor: eviction, Lifetimer: lifetime, Logger: telemeter}
 }
 
